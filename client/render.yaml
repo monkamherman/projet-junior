@@ -1,0 +1,14 @@
+services:
+  - type: static
+    name: projet-junior-client
+    rootDir: client
+    buildCommand: bun install && bun run build
+    publishPath: dist
+    headers:
+      - path: "/*"
+        values:
+          Cache-Control: "public, max-age=0, must-revalidate"
+    redirects:
+      - source: "/*"
+        destination: "/index.html"
+        status: 200
