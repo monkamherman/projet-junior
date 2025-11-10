@@ -11,28 +11,24 @@ import helmet from 'helmet';
 import compression from 'compression';
 import cacheControl from 'express-cache-controller';
 
-// Création du client Redis en dehors de toute fonction
-const redisClient = createClient({
-	url: 'redis://localhost:6379',
-  });
-  
-  // Gestion des erreurs Redis
-  redisClient.on('error', (err) => {
-	console.error('Erreur de connexion Redis:', err.message);
-  });
-  
-  // Fonction pour démarrer le serveur
-  async function startServer() {
-	try {
-	  await redisClient.connect();
-	  console.log("Connexion Redis établie avec succès.");
-	} catch (err) {
-	  console.error('Erreur lors de la connexion Redis:');
-	  process.exit(1); // Arrête le serveur si Redis ne se connecte pas
-	}
-}
+// Création du client Redis (optionnel en dev/tests)
+let redisReady = false;
+const redisClient = createClient({ url: 'redis://localhost:6379' });
 
-startServer()
+redisClient.on('error', (err) => {
+  console.warn('Redis indisponible:', (err as Error).message);
+});
+
+(async () => {
+  try {
+    await redisClient.connect();
+    redisReady = true;
+    console.log('Connexion Redis établie avec succès.');
+  } catch (_err) {
+    redisReady = false;
+    console.warn('Redis non connecté, démarrage sans rate limiting Redis.');
+  }
+})();
 
 const morganStream = {
 	write: (message: string) => {
@@ -41,9 +37,6 @@ const morganStream = {
 };
 
 const app = express();
-
-
-registerRoutes(app)
 
 // Configuration CORS dynamique
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',');
@@ -85,12 +78,40 @@ app.use(helmet({
     includeSubDomains: true,
     preload: true,
   },
-  frameguard: { action: 'deny' }, // Empêche le clickjacking
-  hidePoweredBy: true,           // Masque l'en-tête X-Powered-By
-  noSniff: true,                 // Empêche le sniffing MIME
-  referrerPolicy: { policy: 'strict-origin-when-cross-origin' }, // Politique de référent
+  frameguard: { action: 'deny' },
+  hidePoweredBy: true,
+  noSniff: true,
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
   xssFilter: true, 
 }));
+
+// Rate limiting (après les routes critiques)
+app.use(async (req, res, next) => {
+  if (!redisReady) return next();
+	const ip = req.ip;
+	const key = `rate_limit:${ip}`;
+	const limit = ONE_HUNDRED;
+  
+	const current = await redisClient.incr(key);
+  
+	if (current === 1) {
+	  await redisClient.expire(key, SIXTY);
+	}
+  
+	if (current > limit) {
+	  return res.status(429).json({ error: 'Trop de requêtes depuis cette adresse IP' });
+	}
+  
+	next();
+});
+
+app.use(compression())
+app.use(cacheControl({ maxAge: 86400 }));
+// Logging
+app.use(morgan('combined', { stream: morganStream }));
+
+app.use(express.static('public'));
+
 // Health check
 app.get('/health', (req, res) => {
   res.status(200).json({ 
@@ -103,33 +124,8 @@ app.get('/health', (req, res) => {
 
 app.get('/keep-alive', (req, res) => res.send('OK'))
 
-// Rate limiting (après les routes critiques)
-
-
-app.use(async (req, res, next) => {
-	const ip = req.ip;
-	const key = `rate_limit:${ip}`;
-	const limit = ONE_HUNDRED;
-  
-	const current = await redisClient.incr(key);
-  
-	if (current === 1) {
-	  await redisClient.expire(key, SIXTY); // Expire après 60 secondes
-	}
-  
-	if (current > limit) {
-	  return res.status(429).json({ error: 'Trop de requêtes depuis cette adresse IP' });
-	}
-  
-	next();
-  });
-
-app.use(compression())
-app.use(cacheControl({ maxAge: 86400 }));
-// Logging
-app.use(morgan('combined', { stream: morganStream }));
-
-app.use(express.static('public'));
+// Enregistrer les routes applicatives après les middlewares
+registerRoutes(app)
 
 // Route racine modifiée
 app.get('/', (req, res) => {
@@ -139,7 +135,6 @@ app.get('/', (req, res) => {
     timestamp: new Date().toISOString()
   });
 });
-
 
 // Gestion des erreurs CORS
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -152,7 +147,6 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 10000;
 
-// Ajoutez ce contrôle d'erreur
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Serveur démarré sur le port ${PORT}`);
 }).on('error', (err) => {

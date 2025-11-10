@@ -1,5 +1,8 @@
 import SEO from '@/components/ui/SEO'
 import React from 'react'
+import AboutSection from './AboutSection'
+import Hero from './Hero'
+import ServicesSection from './ServicesSection'
 
 const Home: React.FC = () => {
     return (
@@ -10,10 +13,12 @@ const Home: React.FC = () => {
                 description='Explore the latest iPhones and accessories at unbeatable prices. Enjoy a seamless shopping experience on our modern e-commerce platform.'
             />
 
-            {/* App Comoments */}
-            <>
-                Home
-            </>
+            <Hero />
+
+            <AboutSection />
+
+            <ServicesSection />
+
         </>
     )
 }

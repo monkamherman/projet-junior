@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,8 +7,132 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Participant {
+  id              String    @id @default(auto()) @map("_id") @db.ObjectId
+  nom             String
+  prenom          String
+  sexe            String
+  dateNaissance   DateTime
+  lieuNaissance   String
+  telephone       String
+  email           String    @unique
+  password        String
+  role            String    @default("user")
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // Relations
+  parlements      Parlement[]
+  interdictions   Interdiction[]
+  concernes       Concerne[]
+  inscriptions    Inscription[]
 
-model users {
-  id     String @id @default(auto()) @map("_id") @db.ObjectId
-  name String
+  @@map("participants")
+}
+
+model Parlement {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  montant        Float
+  mode           String
+  datePaiement   DateTime
+  typePaiement   String
+  
+  // Relation
+  participant    Participant @relation(fields: [participantId], references: [id])
+  participantId  String      @db.ObjectId
+
+  @@map("parlements")
+}
+
+model Interdiction {
+  id                  String    @id @default(auto()) @map("_id") @db.ObjectId
+  dateInscription     DateTime
+  statut              String
+  
+  // Relation
+  participant         Participant @relation(fields: [participantId], references: [id])
+  participantId       String      @db.ObjectId
+
+  @@map("interdictions")
+}
+
+model Formation {
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  description  String
+  dateDebut    DateTime
+  dateFin      DateTime
+  titre        String
+  prix         Float
+  
+  // Relations
+  inscriptions  Inscription[]
+  formateur     Formateur?     @relation(fields: [formateurId], references: [id])
+  formateurId   String?        @db.ObjectId
+  dispenses     Dispense[]
+
+  @@map("formations")
+}
+
+model Formateur {
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
+  nom        String
+  telephone  String
+  email      String    @unique
+  
+  // Relations
+  formations  Formation[]
+
+  @@map("formateurs")
+}
+
+model Dispense {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  dateSession DateTime
+  theme       String
+  
+  // Relation
+  formation   Formation @relation(fields: [formationId], references: [id])
+  formationId String    @db.ObjectId
+
+  @@map("dispenses")
+}
+
+model Fonction {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  description String
+  dateDebut   DateTime
+  dateFin     DateTime
+  titre       String
+  prix        Float
+  
+  // Relations
+  concernes    Concerne[]
+
+  @@map("fonctions")
+}
+
+model Concerne {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  concerne    String
+  
+  // Relations
+  participant Participant @relation(fields: [participantId], references: [id])
+  participantId String    @db.ObjectId
+  fonction     Fonction   @relation(fields: [fonctionId], references: [id])
+  fonctionId   String     @db.ObjectId
+
+  @@map("concernes")
+}
+
+model Inscription {
+  id               String      @id @default(auto()) @map("_id") @db.ObjectId
+  dateInscription  DateTime
+
+  // Relations
+  participant      Participant  @relation(fields: [participantId], references: [id])
+  participantId    String       @db.ObjectId
+  formation        Formation    @relation(fields: [formationId], references: [id])
+  formationId      String       @db.ObjectId
+
+  @@map("inscriptions")
 }
