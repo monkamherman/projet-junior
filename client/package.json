@@ -26,9 +26,7 @@
   ],
   "type": "module",
   "engines": {
-    "node": ">=v20.18.1",
-    "yarn": ">=1.22.22",
-    "npm": ">=10.8.2"
+    "node": ">=v20.18.1"
   },
   "scripts": {
     "dev": "vite",
