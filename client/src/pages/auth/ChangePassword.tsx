@@ -1,4 +1,4 @@
-import SEO from '@/components/custom/utils/SEO'
+import SEO from '@/components/ui/SEO'
 import React from 'react'
 
 const ChangePassword: React.FC = () => {
