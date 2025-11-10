@@ -28,8 +28,6 @@
     "docs:clean": "rimraf docs",
     "reinstall": "bun run clean && rimraf node_modules && bun install",
     "commitlint": "commitlint",
-    "prepare": "husky install",
-    "prepare:pre-commit": "npx husky add .husky/pre-commit \"bun run lint\"",
     "release": "standard-version --release-as patch",
     "release:minor": "standard-version --release-as minor",
     "release:major": "standard-version --release-as major",
