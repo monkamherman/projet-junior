@@ -7,132 +7,139 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Participant {
-  id              String    @id @default(auto()) @map("_id") @db.ObjectId
-  nom             String
-  prenom          String
-  sexe            String
-  dateNaissance   DateTime
-  lieuNaissance   String
-  telephone       String
-  email           String    @unique
-  password        String
-  role            String    @default("user")
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  
-  // Relations
-  parlements      Parlement[]
-  interdictions   Interdiction[]
-  concernes       Concerne[]
-  inscriptions    Inscription[]
-
-  @@map("participants")
+enum RoleUtilisateur {
+  ADMIN
+  FORMATEUR
+  APPRENANT
 }
 
-model Parlement {
-  id             String    @id @default(auto()) @map("_id") @db.ObjectId
-  montant        Float
-  mode           String
-  datePaiement   DateTime
-  typePaiement   String
-  
-  // Relation
-  participant    Participant @relation(fields: [participantId], references: [id])
-  participantId  String      @db.ObjectId
-
-  @@map("parlements")
+enum StatutFormation {
+  BROUILLON
+  OUVERTE
+  TERMINEE
 }
 
-model Interdiction {
-  id                  String    @id @default(auto()) @map("_id") @db.ObjectId
-  dateInscription     DateTime
-  statut              String
-  
-  // Relation
-  participant         Participant @relation(fields: [participantId], references: [id])
-  participantId       String      @db.ObjectId
+enum StatutInscription {
+  EN_ATTENTE
+  EN_COURS
+  VALIDEE
+  ANNULEE
+}
 
-  @@map("interdictions")
+enum ModePaiement {
+  MOBILE_MONEY
+  CARTE
+  ESPECES
+  VIREMENT
+}
+
+enum StatutPaiement {
+  EN_ATTENTE
+  SUCCES
+  ECHEC
+}
+
+enum StatutAttestation {
+  GENEREE
+  ENVOYEE
+  TELECHARGEE
+}
+
+model Utilisateur {
+  id         String          @id @default(auto()) @map("_id") @db.ObjectId
+  nom        String
+  prenom     String
+  email      String          @unique
+  telephone  String?
+  motDePasse String
+  role       RoleUtilisateur @default(APPRENANT)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  inscriptions Inscription[]
+  paiements    Paiement[]
+  attestations Attestation[]
+  formations   Formation[]   @relation("FormateurEnCharge")
+
+  @@map("utilisateurs")
 }
 
 model Formation {
-  id           String    @id @default(auto()) @map("_id") @db.ObjectId
-  description  String
-  dateDebut    DateTime
-  dateFin      DateTime
-  titre        String
-  prix         Float
-  
-  // Relations
-  inscriptions  Inscription[]
-  formateur     Formateur?     @relation(fields: [formateurId], references: [id])
-  formateurId   String?        @db.ObjectId
-  dispenses     Dispense[]
+  id          String          @id @default(auto()) @map("_id") @db.ObjectId
+  titre       String
+  description String
+  prix        Float
+  dateDebut   DateTime
+  dateFin     DateTime
+  statut      StatutFormation @default(OUVERTE)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  formateur    Utilisateur?  @relation("FormateurEnCharge", fields: [formateurId], references: [id])
+  formateurId  String?       @db.ObjectId
+  inscriptions Inscription[]
+  attestations Attestation[]
 
   @@map("formations")
 }
 
-model Formateur {
-  id         String    @id @default(auto()) @map("_id") @db.ObjectId
-  nom        String
-  telephone  String
-  email      String    @unique
-  
-  // Relations
-  formations  Formation[]
-
-  @@map("formateurs")
-}
-
-model Dispense {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  dateSession DateTime
-  theme       String
-  
-  // Relation
-  formation   Formation @relation(fields: [formationId], references: [id])
-  formationId String    @db.ObjectId
-
-  @@map("dispenses")
-}
-
-model Fonction {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  description String
-  dateDebut   DateTime
-  dateFin     DateTime
-  titre       String
-  prix        Float
-  
-  // Relations
-  concernes    Concerne[]
-
-  @@map("fonctions")
-}
-
-model Concerne {
-  id          String    @id @default(auto()) @map("_id") @db.ObjectId
-  concerne    String
-  
-  // Relations
-  participant Participant @relation(fields: [participantId], references: [id])
-  participantId String    @db.ObjectId
-  fonction     Fonction   @relation(fields: [fonctionId], references: [id])
-  fonctionId   String     @db.ObjectId
-
-  @@map("concernes")
-}
-
 model Inscription {
-  id               String      @id @default(auto()) @map("_id") @db.ObjectId
-  dateInscription  DateTime
+  id              String            @id @default(auto()) @map("_id") @db.ObjectId
+  dateInscription DateTime          @default(now())
+  statut          StatutInscription @default(EN_ATTENTE)
 
-  // Relations
-  participant      Participant  @relation(fields: [participantId], references: [id])
-  participantId    String       @db.ObjectId
-  formation        Formation    @relation(fields: [formationId], references: [id])
-  formationId      String       @db.ObjectId
+  utilisateur   Utilisateur  @relation(fields: [utilisateurId], references: [id])
+  utilisateurId String       @db.ObjectId
+  formation     Formation    @relation(fields: [formationId], references: [id])
+  formationId   String       @db.ObjectId
+  paiement      Paiement?    @relation("PaiementInscription")
+  attestation   Attestation? @relation("AttestationInscription")
 
   @@map("inscriptions")
+}
+
+model Paiement {
+  id           String         @id @default(auto()) @map("_id") @db.ObjectId
+  reference    String         @unique
+  montant      Float
+  mode         ModePaiement
+  statut       StatutPaiement @default(EN_ATTENTE)
+  datePaiement DateTime       @default(now())
+  commentaire  String?
+
+  utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id])
+  utilisateurId String      @db.ObjectId
+  inscription   Inscription @relation("PaiementInscription", fields: [inscriptionId], references: [id])
+  inscriptionId String      @unique @db.ObjectId
+
+  @@map("paiements")
+}
+
+model Attestation {
+  id                 String            @id @default(auto()) @map("_id") @db.ObjectId
+  numero             String            @unique
+  urlPdf             String
+  statut             StatutAttestation @default(GENEREE)
+  dateEmission       DateTime          @default(now())
+  dateTelechargement DateTime?
+
+  utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id])
+  utilisateurId String      @db.ObjectId
+  formation     Formation   @relation(fields: [formationId], references: [id])
+  formationId   String      @db.ObjectId
+  inscription   Inscription @relation("AttestationInscription", fields: [inscriptionId], references: [id])
+  inscriptionId String      @unique @db.ObjectId
+
+  @@map("attestations")
+}
+
+model OTP {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String
+  code      String
+  expiresAt DateTime
+  validated Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@map("otps")
 }
