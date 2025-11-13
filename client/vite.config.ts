@@ -1,7 +1,6 @@
+import react from '@vitejs/plugin-react-swc';
 import { defineConfig } from 'vite';
-// import react from '@vitejs/plugin-react-swc';
 // import { envs } from './src/core/config/env';
-import react from '@vitejs/plugin-react';
 import dotenv from 'dotenv';
 import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
