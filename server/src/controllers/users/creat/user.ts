@@ -1,6 +1,6 @@
-import { Request, Response } from "express";
+import { PrismaClient, Utilisateur } from "@prisma/client";
 import bcrypt from "bcrypt";
-import { PrismaClient } from "@prisma/client";
+import { Request, Response } from "express";
 
 const prisma = new PrismaClient();
 
@@ -29,7 +29,11 @@ export async function getUser(req: Request, res: Response) {
     res.json(user);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Erreur serveur lors de la récupération de l'utilisateur." });
+    res
+      .status(500)
+      .json({
+        message: "Erreur serveur lors de la récupération de l'utilisateur.",
+      });
   }
 }
 
@@ -42,8 +46,9 @@ export async function updateUser(req: Request, res: Response) {
     if (!user) {
       return res.status(404).json({ message: "Utilisateur non trouvé." });
     }
-
-    const dataToUpdate: any = {
+    const dataToUpdate: Partial<
+      Omit<Utilisateur, "id" | "createdAt" | "updatedAt">
+    > = {
       nom,
       prenom,
       email,
@@ -72,7 +77,11 @@ export async function updateUser(req: Request, res: Response) {
     res.json(updatedUser);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Erreur serveur lors de la mise à jour de l'utilisateur." });
+    res
+      .status(500)
+      .json({
+        message: "Erreur serveur lors de la mise à jour de l'utilisateur.",
+      });
   }
 }
 
@@ -90,6 +99,10 @@ export async function deleteUser(req: Request, res: Response) {
     res.json({ message: "Utilisateur supprimé avec succès." });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Erreur serveur lors de la suppression de l'utilisateur." });
+    res
+      .status(500)
+      .json({
+        message: "Erreur serveur lors de la suppression de l'utilisateur.",
+      });
   }
 }
