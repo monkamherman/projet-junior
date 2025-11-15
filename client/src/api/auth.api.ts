@@ -2,17 +2,17 @@
 import axios from './api.config';
 
 export const authApi = {
-  // Envoi d'OTP pour inscription
+  // Envoi des informations d'inscription et demande d'OTP
   register: (data: {
     email: string;
     motDePasse: string;
     nom: string;
     prenom: string;
     telephone: string;
-  }) => axios.post('/auth/register', data),
+  }) => axios.post('/auth/signup', data),
 
-  // Vérification OTP et création de compte
-  verifyOtpAndRegister: (data: {
+  // Vérification de l'OTP
+  verifyOtp: (data: {
     email: string;
     otp: string;
     nom: string;
@@ -23,19 +23,20 @@ export const authApi = {
 
   // Connexion
   login: (data: { email: string; password: string }) =>
-    axios.post('/auth/login/', data),
+    axios.post('/api/auth/login', data),
 
   // Déconnexion
-  logout: () => axios.post('/auth/logout/'),
+  logout: () => axios.post('/api/auth/logout'),
 
   // Rafraîchissement du token
-  refreshToken: (refresh: string) => axios.post('/auth/refresh/', { refresh }),
+  refreshToken: (refresh: string) =>
+    axios.post('/api/auth/refresh', { refresh }),
 
   // Mot de passe oublié
   forgotPassword: (email: string) =>
-    axios.post('/auth/password-reset/request/', { email }),
+    axios.post('/api/auth/password-reset/request', { email }),
 
   // Réinitialisation du mot de passe
   resetPassword: (data: { token: string; password: string }) =>
-    axios.post('/auth/password-reset/confirm/', data),
+    axios.post('/api/auth/password-reset/confirm', data),
 };

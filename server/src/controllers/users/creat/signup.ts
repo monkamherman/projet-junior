@@ -240,13 +240,26 @@ export async function signup(req: Request, res: Response) {
 
 export async function verifyOTP(req: Request, res: Response) {
   try {
-    const { email, otp } = req.body;
+    const { email, otp, nom, prenom, telephone, motDePasse } = req.body;
 
-    if (!email || !otp) {
+    if (!email || !otp || !nom || !prenom || !motDePasse) {
       return res.status(400).json({
         success: false,
-        message: "L'email et le code OTP sont requis",
+        message: "Tous les champs sont obligatoires",
         code: "MISSING_FIELDS",
+      });
+    }
+
+    // Vérifier si l'utilisateur existe déjà
+    const existingUser = await prisma.utilisateur.findUnique({
+      where: { email },
+    });
+
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "Un compte avec cet email existe déjà",
+        code: "EMAIL_ALREADY_EXISTS",
       });
     }
 
@@ -269,15 +282,35 @@ export async function verifyOTP(req: Request, res: Response) {
       });
     }
 
+    // Hasher le mot de passe
+    const hashedPassword = await bcrypt.hash(motDePasse, 10);
+
+    // Créer l'utilisateur
+    const user = await prisma.utilisateur.create({
+      data: {
+        email,
+        nom,
+        prenom,
+        telephone: telephone || null,
+        motDePasse: hashedPassword,
+      },
+    });
+
     // Marquer l'OTP comme utilisé
     await prisma.oTP.update({
       where: { id: otpRecord.id },
       data: { validated: true },
     });
 
-    return res.status(200).json({
+    return res.status(201).json({
       success: true,
-      message: "Code OTP vérifié avec succès",
+      message: "Compte créé avec succès",
+      data: {
+        id: user.id,
+        email: user.email,
+        nom: user.nom,
+        prenom: user.prenom,
+      },
     });
   } catch (error) {
     console.error("Erreur lors de la vérification de l'OTP:", error);

@@ -17,24 +17,28 @@ import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import * as z from 'zod';
 
-const formSchema = z
-  .object({
-    nom: z.string().min(2, 'Le nom doit contenir au moins 2 caractères'),
-    prenom: z.string().min(2, 'Le prénom doit contenir au moins 2 caractères'),
-    email: z.string().email('Email invalide'),
-    telephone: z.string().min(10, 'Numéro de téléphone invalide'),
-    motDePasse: z
-      .string()
-      .min(6, 'Le mot de passe doit contenir au moins 6 caractères'),
-    confirmPassword: z.string(),
-    otp: z.string().optional(),
-  })
-  .refine((data) => data.motDePasse === data.confirmPassword, {
-    message: 'Les mots de passe ne correspondent pas',
-    path: ['confirmPassword'],
-  });
+const createSchema = (otpSent: boolean) => {
+  return z
+    .object({
+      nom: z.string().min(2, 'Le nom doit contenir au moins 2 caractères'),
+      prenom: z.string().min(2, 'Le prénom doit contenir au moins 2 caractères'),
+      email: z.string().email('Email invalide'),
+      telephone: z.string().min(10, 'Numéro de téléphone invalide'),
+      motDePasse: z
+        .string()
+        .min(6, 'Le mot de passe doit contenir au moins 6 caractères'),
+      confirmPassword: z.string(),
+      otp: otpSent 
+        ? z.string().min(6, 'Le code OTP est requis')
+        : z.string().optional(),
+    })
+    .refine((data) => data.motDePasse === data.confirmPassword, {
+      message: 'Les mots de passe ne correspondent pas',
+      path: ['confirmPassword'],
+    });
+};
 
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = z.infer<ReturnType<typeof createSchema>>;
 
 const Register = () => {
   const { toast } = useToast();
@@ -43,7 +47,7 @@ const Register = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(createSchema(otpSent)),
     defaultValues: {
       nom: '',
       prenom: '',
@@ -55,11 +59,11 @@ const Register = () => {
     },
   });
 
-  const onSubmit = async (values: FormValues) => {
+  const onSubmit = async (values: z.infer<ReturnType<typeof createSchema>>) => {
     setIsSubmitting(true);
     try {
       if (!otpSent) {
-        // Étape 1: Envoi des informations et demande d'OTP
+        // Première étape : Envoi des informations et demande d'OTP
         await authApi.register({
           nom: values.nom,
           prenom: values.prenom,
@@ -68,19 +72,20 @@ const Register = () => {
           motDePasse: values.motDePasse,
         });
 
+        setOtpSent(true);
         toast({
           title: 'Code OTP envoyé',
           description: 'Veuillez vérifier votre email et entrer le code OTP',
         });
       } else {
-        // Étape 2: Vérification de l'OTP et création du compte
-        const response = await authApi.verifyOtpAndRegister({
+        // Deuxième étape : Vérification de l'OTP et création du compte
+        const response = await authApi.verifyOtp({
           email: values.email,
           otp: values.otp || '',
           nom: values.nom,
           prenom: values.prenom,
           telephone: values.telephone,
-          motDePasse: values.motDePasse
+          motDePasse: values.motDePasse,
         });
 
         if (response.data.success) {
@@ -89,7 +94,6 @@ const Register = () => {
             description: 'Votre compte a été créé avec succès.',
             variant: 'default',
           });
-
           // Redirection vers la page de connexion après un court délai
           setTimeout(() => {
             navigate('/login');

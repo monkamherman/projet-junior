@@ -9,7 +9,7 @@ router.post("/login", login);
 router.post("/logout", logout);
 
 // Inscription
-router.post("/register", signup);
+router.post("/signup", signup);
 router.post("/send-otp", sendOTP);
 router.post("/verify-otp", verifyOTP);
 
