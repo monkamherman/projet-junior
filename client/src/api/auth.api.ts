@@ -2,17 +2,24 @@
 import axios from './api.config';
 
 export const authApi = {
-  // Inscription
+  // Envoi d'OTP pour inscription
   register: (data: {
     email: string;
-    password: string;
-    first_name: string;
-    last_name: string;
-  }) => axios.post('/auth/register/', data),
+    motDePasse: string;
+    nom: string;
+    prenom: string;
+    telephone: string;
+  }) => axios.post('/auth/register', data),
 
-  // Vérification OTP
-  verifyOtp: (data: { email: string; otp: string }) =>
-    axios.post('/auth/verify-otp/', data),
+  // Vérification OTP et création de compte
+  verifyOtpAndRegister: (data: {
+    email: string;
+    otp: string;
+    nom: string;
+    prenom: string;
+    telephone: string;
+    motDePasse: string;
+  }) => axios.post('/auth/verify-otp', data),
 
   // Connexion
   login: (data: { email: string; password: string }) =>

@@ -2,7 +2,7 @@
   "exclude": ["node_modules", "dist", "src/**/*.test.ts"],
   "include": ["src/**/*"],
   "compilerOptions": {
-    "types": ["node",  "express"],
+    "types": ["node", "express"],
     "target": "ESNext",
     "module": "CommonJS",
     "rootDir": "./src",

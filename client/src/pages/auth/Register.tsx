@@ -1,4 +1,5 @@
 // src/pages/auth/Register.tsx
+import { authApi } from '@/api';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -9,10 +10,11 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import SEO from '@/components/ui/SEO';
 import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
+import { Link, useNavigate } from 'react-router-dom';
 import * as z from 'zod';
 
 const formSchema = z
@@ -25,6 +27,7 @@ const formSchema = z
       .string()
       .min(6, 'Le mot de passe doit contenir au moins 6 caractères'),
     confirmPassword: z.string(),
+    otp: z.string().optional(),
   })
   .refine((data) => data.motDePasse === data.confirmPassword, {
     message: 'Les mots de passe ne correspondent pas',
@@ -34,6 +37,11 @@ const formSchema = z
 type FormValues = z.infer<typeof formSchema>;
 
 const Register = () => {
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const [otpSent, setOtpSent] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -43,50 +51,110 @@ const Register = () => {
       telephone: '',
       motDePasse: '',
       confirmPassword: '',
+      otp: '',
     },
   });
-  const { toast } = useToast();
+
   const onSubmit = async (values: FormValues) => {
+    setIsSubmitting(true);
     try {
-      console.log('Données du formulaire:', values);
-      // Ici, vous pourriez ajouter la logique d'envoi des données
-      toast({
-        variant: 'default',
-        title: 'vous etes maintenant inscrit',
-        description: 'bienvenu',
-      });
-    } catch (error) {
-      console.error("Erreur lors de l'inscription:", error);
+      if (!otpSent) {
+        // Étape 1: Envoi des informations et demande d'OTP
+        await authApi.register({
+          nom: values.nom,
+          prenom: values.prenom,
+          email: values.email,
+          telephone: values.telephone,
+          motDePasse: values.motDePasse,
+        });
+
+        toast({
+          title: 'Code OTP envoyé',
+          description: 'Veuillez vérifier votre email et entrer le code OTP',
+        });
+      } else {
+        // Étape 2: Vérification de l'OTP et création du compte
+        const response = await authApi.verifyOtpAndRegister({
+          email: values.email,
+          otp: values.otp || '',
+          nom: values.nom,
+          prenom: values.prenom,
+          telephone: values.telephone,
+          motDePasse: values.motDePasse
+        });
+
+        if (response.data.success) {
+          toast({
+            title: 'Compte créé avec succès !',
+            description: 'Votre compte a été créé avec succès.',
+            variant: 'default',
+          });
+
+          // Redirection vers la page de connexion après un court délai
+          setTimeout(() => {
+            navigate('/login');
+          }, 2000);
+        } else {
+          throw new Error(response.data.message || "Échec de la création du compte");
+        }
+      }
+    } catch (err: unknown) {
+      let errorMessage = 'Une erreur est survenue';
+      
+      if (err && typeof err === 'object') {
+        const error = err as {
+          response?: {
+            data?: {
+              message?: string;
+              code?: string;
+            };
+          };
+          message?: string;
+        };
+        
+        errorMessage = error.response?.data?.message || error.message || 'Une erreur est survenue';
+        
+        // Si l'erreur concerne l'OTP, on réinitialise le formulaire
+        if (error.response?.data?.code === 'INVALID_OTP') {
+          setOtpSent(false);
+        }
+      }
+      
+      console.error('Erreur lors de l\'inscription:', err);
+      
       toast({
         variant: 'destructive',
-        title: 'Données invalides',
-        description: 'Veuillez corriger les erreurs',
+        title: 'Erreur',
+        description: errorMessage,
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <>
-      <SEO
-        title="Créer un compte"
-        description="Inscrivez-vous pour accéder à notre centre de formation"
-      />
+    <div className="flex min-h-screen items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold">Créer un compte</h1>
+          <p className="text-muted-foreground">
+            {otpSent
+              ? 'Entrez le code OTP reçu par email'
+              : 'Entrez vos informations pour créer un compte'}
+          </p>
+        </div>
 
-      <div className="flex min-h-screen items-center justify-center p-4">
-        <div className="w-full max-w-md space-y-6">
-          <div className="text-center">
-            <h1 className="text-2xl font-bold">Créer un compte</h1>
-            <p className="text-muted-foreground">
-              Entrez vos informations pour créer un compte
-            </p>
-          </div>
-
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div
+              className={`space-y-4 ${otpSent ? 'opacity-50' : ''}`}
+              style={{ filter: otpSent ? 'blur(2px)' : 'none' }}
+            >
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="prenom"
+                  disabled={otpSent || isSubmitting}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Prénom</FormLabel>
@@ -100,6 +168,7 @@ const Register = () => {
                 <FormField
                   control={form.control}
                   name="nom"
+                  disabled={otpSent || isSubmitting}
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Nom</FormLabel>
@@ -115,6 +184,7 @@ const Register = () => {
               <FormField
                 control={form.control}
                 name="email"
+                disabled={otpSent || isSubmitting}
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Email</FormLabel>
@@ -133,6 +203,7 @@ const Register = () => {
               <FormField
                 control={form.control}
                 name="telephone"
+                disabled={otpSent || isSubmitting}
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Téléphone</FormLabel>
@@ -150,6 +221,7 @@ const Register = () => {
               <FormField
                 control={form.control}
                 name="motDePasse"
+                disabled={otpSent || isSubmitting}
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Mot de passe</FormLabel>
@@ -168,6 +240,7 @@ const Register = () => {
               <FormField
                 control={form.control}
                 name="confirmPassword"
+                disabled={otpSent || isSubmitting}
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Confirmer le mot de passe</FormLabel>
@@ -182,25 +255,60 @@ const Register = () => {
                   </FormItem>
                 )}
               />
+            </div>
 
-              <Button type="submit" className="w-full">
-                S'inscrire
-              </Button>
-            </form>
-          </Form>
+            {otpSent && (
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="otp"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Code OTP</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Entrez le code reçu par email"
+                          {...field}
+                          className="text-center text-xl tracking-widest"
+                          maxLength={6}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="button"
+                  variant="link"
+                  className="w-full text-sm text-muted-foreground"
+                  onClick={() => setOtpSent(false)}
+                >
+                  Modifier les informations
+                </Button>
+              </div>
+            )}
 
-          <div className="text-center text-sm">
-            Déjà un compte ?{' '}
-            <a
-              href="/login"
-              className="font-medium text-primary hover:underline"
-            >
-              Se connecter
-            </a>
-          </div>
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting
+                ? 'Traitement en cours...'
+                : otpSent
+                  ? 'Vérifier le code OTP'
+                  : "S'inscrire"}
+            </Button>
+          </form>
+        </Form>
+
+        <div className="text-center text-sm">
+          Déjà un compte ?{' '}
+          <Link
+            to="/login"
+            className="font-medium text-primary hover:underline"
+          >
+            Se connecter
+          </Link>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

@@ -1,156 +1,157 @@
 // src/server.ts
-import express from 'express';
-import rateLimit from 'express-rate-limit';
-import morgan from 'morgan';
-import cors from 'cors';
-import { ONE_HUNDRED, SIXTY } from './core/constants';
-import { logger } from 'env-var';
-import { createClient } from 'redis';
-import registerRoutes from './routes';
-import helmet from 'helmet';
-import compression from 'compression';
-import cacheControl from 'express-cache-controller';
+import compression from "compression";
+import cors from "cors";
+import { logger } from "env-var";
+import express from "express";
+import cacheControl from "express-cache-controller";
+import helmet from "helmet";
+import morgan from "morgan";
+import { createClient } from "redis";
+import { ONE_HUNDRED, SIXTY } from "./core/constants";
+import registerRoutes from "./routes";
 
 // Création du client Redis (optionnel en dev/tests)
 let redisReady = false;
-const redisClient = createClient({ url: 'redis://localhost:6379' });
+const redisClient = createClient({ url: "redis://localhost:6379" });
 
-redisClient.on('error', (err) => {
-  console.warn('Redis indisponible:', (err as Error).message);
+redisClient.on("error", (err) => {
+  console.warn("Redis indisponible:", (err as Error).message);
 });
 
 (async () => {
   try {
     await redisClient.connect();
     redisReady = true;
-    console.log('Connexion Redis établie avec succès.');
+    console.log("Connexion Redis établie avec succès.");
   } catch (_err) {
     redisReady = false;
-    console.warn('Redis non connecté, démarrage sans rate limiting Redis.');
+    console.warn("Redis non connecté, démarrage sans rate limiting Redis.");
   }
 })();
 
 const morganStream = {
-	write: (message: string) => {
-		logger('http', message.trim());
-	}
+  write: (message: string) => {
+    logger("http", message.trim());
+  },
 };
 
 const app = express();
 
-// Configuration CORS dynamique
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || '').split(',');
-
-const corsOptions = {
-  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
-    console.log('origin recived',origin);
-    if (!origin || allowedOrigins.includes(origin)) {
+// Configuration CORS simplifiée pour le développement
+const corsOptions: cors.CorsOptions = {
+  origin: (origin, callback) => {
+    const allowedOrigins = ["http://localhost:3000", "http://localhost:4000"];
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
-      console.warn(`CORS blocked request from origin: ${origin}`);
-      callback(new Error('Blocked by CORS policy'));
+      callback(new Error("Not allowed by CORS"));
     }
-    
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With','accept'],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+    "Accept",
+  ],
   credentials: true,
-  optionsSuccessStatus: 200
+  optionsSuccessStatus: 200,
 };
 
 // Middlewares critiques en premier
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://trusted.cdn.com"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://trusted.cdn.com"],
-      imgSrc: ["'self'", "data:", "https://trusted.cdn.com"],
-      fontSrc: ["'self'", "https://trusted.cdn.com"],
-      connectSrc: ["'self'", "https://api.trusted.com"],
-    },
-  },
-  hsts: {
-    maxAge: 63072000,
-    includeSubDomains: true,
-    preload: true,
-  },
-  frameguard: { action: 'deny' },
-  hidePoweredBy: true,
-  noSniff: true,
-  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
-  xssFilter: true, 
-}));
+
+// Configuration Helmet simplifiée pour le développement
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    crossOriginEmbedderPolicy: false,
+    crossOriginOpenerPolicy: false,
+  })
+);
 
 // Rate limiting (après les routes critiques)
 app.use(async (req, res, next) => {
   if (!redisReady) return next();
-	const ip = req.ip;
-	const key = `rate_limit:${ip}`;
-	const limit = ONE_HUNDRED;
-  
-	const current = await redisClient.incr(key);
-  
-	if (current === 1) {
-	  await redisClient.expire(key, SIXTY);
-	}
-  
-	if (current > limit) {
-	  return res.status(429).json({ error: 'Trop de requêtes depuis cette adresse IP' });
-	}
-  
-	next();
+  const ip = req.ip;
+  const key = `rate_limit:${ip}`;
+  const limit = ONE_HUNDRED;
+
+  const current = await redisClient.incr(key);
+
+  if (current === 1) {
+    await redisClient.expire(key, SIXTY);
+  }
+
+  if (current > limit) {
+    return res
+      .status(429)
+      .json({ error: "Trop de requêtes depuis cette adresse IP" });
+  }
+
+  next();
 });
 
-app.use(compression())
+// Middleware de compression
+app.use(compression());
+
+// Middleware de contrôle du cache
 app.use(cacheControl({ maxAge: 86400 }));
 // Logging
-app.use(morgan('combined', { stream: morganStream }));
+app.use(morgan("combined", { stream: morganStream }));
 
-app.use(express.static('public'));
+app.use(express.static("public"));
 
 // Health check
-app.get('/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'healthy',
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "healthy",
     timestamp: new Date().toISOString(),
     environment: process.env.NODE_ENV,
-    version: '1.0.0'
+    version: "1.0.0",
   });
 });
 
-app.get('/keep-alive', (req, res) => res.send('OK'))
+app.get("/keep-alive", (req, res) => res.send("OK"));
 
 // Enregistrer les routes applicatives après les middlewares
-registerRoutes(app)
+registerRoutes(app);
 
 // Route racine modifiée
-app.get('/', (req, res) => {
+app.get("/api", (req, res) => {
   res.status(200).json({
-    status: 'online',
+    status: "online",
     uptime: process.uptime(),
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   });
 });
 
 // Gestion des erreurs CORS
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  if (err.message.includes('CORS')) {
-    res.status(403).json({ error: err.message });
-  } else {
-    next(err);
+app.use(
+  (
+    err: Error,
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction
+  ) => {
+    if (err.message.includes("CORS")) {
+      res.status(403).json({ error: err.message });
+    } else {
+      next(err);
+    }
   }
-});
+);
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 10000;
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Serveur démarré sur le port ${PORT}`);
-}).on('error', (err) => {
-  console.error('Erreur de démarrage:', err.message);
-  process.exit(1);
-});
-
+app
+  .listen(PORT, "0.0.0.0", () => {
+    console.log(`🚀 Serveur démarré sur le port ${PORT}`);
+  })
+  .on("error", (err) => {
+    console.error("Erreur de démarrage:", err.message);
+    process.exit(1);
+  });
