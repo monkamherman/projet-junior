@@ -240,7 +240,11 @@ export async function signup(req: Request, res: Response) {
 
 export async function verifyOTP(req: Request, res: Response) {
   try {
+    console.log('Corps de la requête reçu:', req.body);
+    
     const { email, otp, nom, prenom, telephone, motDePasse } = req.body;
+
+    console.log('Champs extraits:', { email, otp, nom, prenom, telephone, motDePasse });
 
     if (!email || !otp || !nom || !prenom || !motDePasse) {
       return res.status(400).json({

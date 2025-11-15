@@ -1,22 +1,25 @@
 // src/api/api.config.ts
+import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import axios from 'axios';
 
 // Configuration de base
-const BASE_URL = 'http://localhost:10000/api';
+const BASE_URL = 'http://localhost:10000';
 
 // Configuration axios par défaut
-const axiosInstance = axios.create({
+export const axiosInstance = axios.create({
   baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
+  withCredentials: true,
 });
 
 // Intercepteur pour ajouter le token d'authentification
 axiosInstance.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('access_token');
+  (config: InternalAxiosRequestConfig) => {
+    const token = localStorage.getItem('token');
     if (token) {
+      config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -29,29 +32,45 @@ axiosInstance.interceptors.request.use(
 // Intercepteur pour gérer les erreurs 401
 axiosInstance.interceptors.response.use(
   (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
+  async (error: AxiosError) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & {
+      _retry?: boolean;
+    };
 
-    if (error.response.status === 401 && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry
+    ) {
       originalRequest._retry = true;
 
       try {
+        // Essayer de rafraîchir le token
         const refreshToken = localStorage.getItem('refresh_token');
-        const response = await axios.post(`${BASE_URL}/auth/refresh/`, {
-          refresh: refreshToken,
-        });
+        if (!refreshToken) {
+          throw new Error('Aucun token de rafraîchissement disponible');
+        }
 
+        // Appel direct à l'API de rafraîchissement
+        const response = await axiosInstance.post<{ access: string }>(
+          '/api/auth/refresh',
+          { refresh: refreshToken }
+        );
+        
         const { access } = response.data;
-        localStorage.setItem('access_token', access);
+        localStorage.setItem('token', access);
 
-        originalRequest.headers.Authorization = `Bearer ${access}`;
+        if (originalRequest.headers) {
+          originalRequest.headers.Authorization = `Bearer ${access}`;
+        }
+
         return axiosInstance(originalRequest);
-      } catch (error) {
-        // Rediriger vers la page de connexion en cas d'erreur de rafraîchissement
-        localStorage.removeItem('access_token');
+      } catch (refreshError) {
+        // En cas d'erreur de rafraîchissement, déconnecter l'utilisateur
+        console.error('Erreur de rafraîchissement du token:', refreshError);
+        localStorage.removeItem('token');
         localStorage.removeItem('refresh_token');
         window.location.href = '/login';
-        return Promise.reject(error);
       }
     }
 

@@ -10,10 +10,11 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import SEO from '@/components/ui/SEO';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import * as z from 'zod';
 
 const formSchema = z.object({
@@ -27,6 +28,9 @@ type FormValues = z.infer<typeof formSchema>;
 
 const Login = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { login } = useAuth();
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -38,17 +42,25 @@ const Login = () => {
   const onSubmit = async (values: FormValues) => {
     try {
       console.log('Tentative de connexion avec :', values);
-      // Ici, vous pourriez ajouter la logique de connexion
+      await login(values.email, values.password);
+
       toast({
         title: 'Connexion réussie',
         description: 'Vous êtes maintenant connecté',
       });
+
+      // Rediriger vers la page d'accueil après connexion réussie
+      navigate('/');
     } catch (error) {
       console.error('Erreur de connexion :', error);
+
       toast({
         variant: 'destructive',
         title: 'Erreur de connexion',
-        description: 'Email ou mot de passe incorrect',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Une erreur est survenue lors de la connexion',
       });
     }
   };

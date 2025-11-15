@@ -12,7 +12,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
 import * as z from 'zod';
@@ -20,10 +20,26 @@ import * as z from 'zod';
 const createSchema = (otpSent: boolean) => {
   return z
     .object({
-      nom: z.string().min(2, 'Le nom doit contenir au moins 2 caractères'),
-      prenom: z.string().min(2, 'Le prénom doit contenir au moins 2 caractères'),
-      email: z.string().email('Email invalide'),
-      telephone: z.string().min(10, 'Numéro de téléphone invalide'),
+      nom: z
+        .string()
+        .min(2, 'Le nom doit contenir au moins 2 caractères')
+        .max(50, 'Le nom ne peut pas dépasser 50 caractères'),
+      prenom: z
+        .string()
+        .min(2, 'Le prénom doit contenir au moins 2 caractères')
+        .max(50, 'Le prénom ne peut pas dépasser 50 caractères'),
+      email: z
+        .string()
+        .email('Email invalide')
+        .max(100, 'L\'email ne peut pas dépasser 100 caractères'),
+      telephone: z
+        .string()
+        .min(10, 'Le numéro de téléphone doit contenir au moins 10 chiffres')
+        .max(15, 'Le numéro de téléphone ne peut pas dépasser 15 chiffres')
+        .regex(
+          /^[0-9+\s-]+$/,
+          'Le numéro de téléphone ne doit contenir que des chiffres, des espaces, des tirets ou le signe +'
+        ),
       motDePasse: z
         .string()
         .min(6, 'Le mot de passe doit contenir au moins 6 caractères'),
@@ -59,45 +75,78 @@ const Register = () => {
     },
   });
 
-  const onSubmit = async (values: z.infer<ReturnType<typeof createSchema>>) => {
+  // Mise à jour du schéma de validation lorsque otpSent change
+  useEffect(() => {
+    form.clearErrors();
+    form.trigger();
+  }, [otpSent, form]);
+
+  const onSubmit = async (formValues: z.infer<ReturnType<typeof createSchema>>) => {
     setIsSubmitting(true);
     try {
       if (!otpSent) {
         // Première étape : Envoi des informations et demande d'OTP
         await authApi.register({
-          nom: values.nom,
-          prenom: values.prenom,
-          email: values.email,
-          telephone: values.telephone,
-          motDePasse: values.motDePasse,
+          nom: formValues.nom,
+          prenom: formValues.prenom,
+          email: formValues.email,
+          telephone: formValues.telephone,
+          motDePasse: formValues.motDePasse,
         });
 
+        // Activer le mode OTP sans réinitialiser le formulaire
         setOtpSent(true);
+        
         toast({
           title: 'Code OTP envoyé',
           description: 'Veuillez vérifier votre email et entrer le code OTP',
         });
       } else {
+        // Récupérer toutes les valeurs du formulaire
+        const allValues = form.getValues();
+        
         // Deuxième étape : Vérification de l'OTP et création du compte
         const response = await authApi.verifyOtp({
-          email: values.email,
-          otp: values.otp || '',
-          nom: values.nom,
-          prenom: values.prenom,
-          telephone: values.telephone,
-          motDePasse: values.motDePasse,
+          email: allValues.email,
+          otp: formValues.otp || '',
+          nom: allValues.nom,
+          prenom: allValues.prenom,
+          telephone: allValues.telephone,
+          motDePasse: allValues.motDePasse,
         });
 
         if (response.data.success) {
-          toast({
-            title: 'Compte créé avec succès !',
-            description: 'Votre compte a été créé avec succès.',
-            variant: 'default',
-          });
-          // Redirection vers la page de connexion après un court délai
-          setTimeout(() => {
+          // Connexion automatique après inscription réussie
+          try {
+            const loginResponse = await authApi.login({
+              email: allValues.email,
+              password: allValues.motDePasse
+            });
+
+            // Stocker le token et rafraîchir le token
+            if (loginResponse.data.access && loginResponse.data.refresh) {
+              localStorage.setItem('token', loginResponse.data.access);
+              localStorage.setItem('refresh_token', loginResponse.data.refresh);
+              
+              toast({
+                title: 'Inscription réussie !',
+                description: 'Vous êtes maintenant connecté.',
+                variant: 'default',
+              });
+              
+              // Redirection vers la page d'accueil
+              navigate('/');
+            }
+          } catch (loginError) {
+            console.error('Erreur lors de la connexion automatique:', loginError);
+            // Si la connexion automatique échoue, rediriger vers la page de connexion
+            toast({
+              title: 'Compte créé avec succès',
+              description: 'Veuillez vous connecter avec vos identifiants.',
+              variant: 'default',
+            });
             navigate('/login');
-          }, 2000);
+          }
         } else {
           throw new Error(response.data.message || "Échec de la création du compte");
         }
