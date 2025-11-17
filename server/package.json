@@ -10,7 +10,10 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --clear --transpile-only --ignore-watch node_modules ./src/app.ts",
     "build": "rimraf ./dist && tsc",
-    "start": "node dist/app.js"
+    "start": "node dist/app.js",
+    "start:prod": "NODE_ENV=production node dist/app.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate deploy"
   },
   "keywords": [],
   "author": "",

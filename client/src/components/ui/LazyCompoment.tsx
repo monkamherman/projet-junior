@@ -16,15 +16,27 @@ const DynamicPageLoader: React.FC<DynamicPageLoaderProps> = ({ pageKey }) => {
     // Lazy load the page based on the provided pageKey 
     // @ts-ignore-next-line
     const PageComponent = lazy(() => {
-        const importPage = pages[`/src/pages/${pageKey}.tsx`];
+        // Try exact match
+        let importer = pages[`/src/pages/${pageKey}.tsx`];
 
-        if (!importPage) {
+        // Fallback: try to find by suffix to avoid path mismatches
+        if (!importer) {
+            const matchKey = Object.keys(pages).find((k) =>
+                k.endsWith(`/${pageKey}.tsx`)
+            );
+            if (matchKey) {
+                // @ts-ignore-next-line – dynamic import map types
+                importer = pages[matchKey];
+            }
+        }
+
+        if (!importer) {
             console.error(`Page not found: ${pageKey}`);
             return Promise.reject(new Error(`Page not found: ${pageKey}`));
         }
 
         console.log("Corect import ");
-        return importPage();
+        return importer();
     });
 
     return (

@@ -1,16 +1,43 @@
-FROM node:20-alpine
+# Étape de construction
+FROM oven/bun:latest AS builder
 
 WORKDIR /app
 
-COPY package*.json ./
-COPY yarn.lock ./
+# Copier les fichiers de dépendances
+COPY package.json bun.lock ./
 
-RUN yarn install
+# Installer les dépendances
+RUN bun install --frozen-lockfile
 
+# Copier le reste des fichiers
 COPY . .
 
-RUN yarn build
+# Construire l'application
+RUN bun run build
 
+# Étape de production
+FROM oven/bun:latest
+
+WORKDIR /app
+
+# Installer les dépendances de production uniquement
+COPY package.json bun.lock ./
+RUN bun install --production --frozen-lockfile
+
+# Copier les fichiers construits
+COPY --from=builder /app/dist ./dist
+
+# Copier les fichiers statiques nécessaires
+COPY --from=builder /app/prisma ./prisma
+
+# Installer Prisma Client
+RUN bunx prisma generate
+
+# Installer les dépendances système nécessaires pour Prisma
+RUN apt-get update && apt-get install -y openssl
+
+# Exposer le port
 EXPOSE 3000
 
-CMD ["yarn", "start"]
+# Commande de démarrage
+CMD ["bun", "run", "start:prod"]

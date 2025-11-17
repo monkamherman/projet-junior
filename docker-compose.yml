@@ -1,0 +1,88 @@
+version: '3.8'
+
+# Configuration par défaut
+x-defaults: &defaults
+  restart: unless-stopped
+  stop_grace_period: 60s
+  stop_signal: SIGTERM
+  healthcheck:
+    interval: 30s
+    timeout: 10s
+    retries: 3
+    start_period: 40s
+
+# Réseau personnalisé pour une meilleure isolation
+networks:
+  app-network:
+    driver: bridge
+
+# Volumes pour la persistance des données
+volumes:
+  mongodb_data:
+  node_modules:
+
+services:
+  # Service client
+  client:
+    <<: *defaults
+    container_name: projet-junior-client
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      server:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - REACT_APP_API_URL=http://server:3001 # Utilisation du nom du service
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:80"]
+
+  # Service serveur
+  server:
+    <<: *defaults
+    container_name: projet-junior-server
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+      args:
+        - NODE_ENV=production
+    ports:
+      - "3001:3000"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - MONGODB_URI=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:27017/${MONGO_INITDB_DATABASE}?authSource=admin
+      - JWT_SECRET=${JWT_SECRET:-your_jwt_secret_key_here}
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "http://localhost:3000/health"]
+
+  # Base de données MongoDB
+  mongodb:
+    <<: *defaults
+    image: mongo:6.0
+    container_name: projet-junior-mongodb
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME:-admin}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD:-change_this_password}
+      - MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE:-projet_junior}
+    volumes:
+      - mongodb_data:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - app-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh mongodb://${MONGO_INITDB_ROOT_USERNAME:-admin}:${MONGO_INITDB_ROOT_PASSWORD:-change_this_password}@localhost:27017/${MONGO_INITDB_DATABASE:-projet_junior}?authSource=admin --quiet
