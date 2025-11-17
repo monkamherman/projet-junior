@@ -1,14 +1,14 @@
-import { createBrowserRouter } from 'react-router-dom';
-import { dashboardRoutes } from '@/features/dashboard/routes';
-// import ScrollProgress from '@/components/ui/scroll-progress'
 import DynamicPageLoader from '@/components/ui/LazyCompoment';
+import { dashboardRoutes } from '@/features/dashboard/routes';
+import { ProfilePage } from '@/features/profile/pages/ProfilePage';
 import UserLayout from '@/layouts/UserLayout';
-import Home from '@/pages/home/Home';
+import ForgotPassword from '@/pages/auth/ForgotPassword';
 import Login from '@/pages/auth/Login';
 import Register from '@/pages/auth/Register';
-import ForgotPassword from '@/pages/auth/ForgotPassword';
 import ResetPassword from '@/pages/auth/ResetPassword';
 import VerifyOTP from '@/pages/auth/VerifyOTP';
+import Home from '@/pages/home/Home';
+import { createBrowserRouter } from 'react-router-dom';
 
 /**
  * Creates a router with specified routes and elements for each route.
@@ -33,6 +33,11 @@ const RouterInstance = createBrowserRouter([
       { path: 'forgot-password', element: <ForgotPassword /> },
       { path: 'reset-password', element: <ResetPassword /> },
       { path: 'verify-otp', element: <VerifyOTP /> },
+      // Profile accessible directement
+      {
+        path: 'profile',
+        element: <ProfilePage />,
+      },
       // Public catch-all -> 404
       { path: '*', element: <DynamicPageLoader pageKey="error/PageError" /> },
     ],
@@ -45,4 +50,4 @@ const RouterInstance = createBrowserRouter([
 ]);
 
 export const router = RouterInstance;
-export default router;
+// export default router;

@@ -1,10 +1,9 @@
-import { PrismaClient } from '@prisma/client';
-import { Inscription } from '@prisma/client';
+import { PrismaClient, type Inscription } from '@prisma/client';
 import { createWriteStream } from 'fs';
 import { join } from 'path';
 import PDFDocument from 'pdfkit';
 import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { fr } from 'date-fns/locale/fr';
 
 const prisma = new PrismaClient();
 
@@ -13,8 +12,22 @@ interface CertificateData {
   url: string;
 }
 
-export async function generateCertificate(inscription: any): Promise<CertificateData> {
-  return new Promise(async (resolve, reject) => {
+interface InscriptionWithRelations extends Omit<Inscription, 'dateInscription'> {
+  utilisateur: {
+    nom: string;
+    prenom: string;
+  };
+  formation: {
+    titre: string;
+    duree: number;
+    dateDebut: Date | string;
+    dateFin: Date | string;
+  };
+  dateInscription: Date; // Garder le type Date pour correspondre au modèle Prisma
+}
+
+export function generateCertificate(inscription: InscriptionWithRelations): Promise<CertificateData> {
+  return new Promise((resolve, reject) => {
     try {
       const { utilisateur, formation } = inscription;
       

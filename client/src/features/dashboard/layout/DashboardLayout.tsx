@@ -1,20 +1,20 @@
-import { Link, useLocation, Outlet } from 'react-router-dom';
-import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
 import {
-  Home,
-  Users,
-  GraduationCap,
-  FileText,
-  FileCheck,
-  LogOut,
   ChevronRight,
+  FileCheck,
+  FileText,
+  GraduationCap,
+  Home,
+  LogOut,
   Menu,
-  X
+  Users,
+  X,
 } from 'lucide-react';
 import { useState } from 'react';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 
 const navItems = [
   { icon: Home, label: 'Tableau de bord', to: '/dashboard' },
@@ -33,18 +33,18 @@ export function DashboardLayout() {
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar for desktop */}
-      <div className="hidden md:flex flex-col w-64 border-r bg-card text-card-foreground">
-        <div className="flex h-16 items-center px-6 border-b">
+      <div className="hidden w-64 flex-col border-r bg-card text-card-foreground md:flex">
+        <div className="flex h-16 items-center border-b px-6">
           <div className="flex items-center gap-2 font-semibold">
             <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-              <span>J</span>
+              <span>C</span>
             </div>
-            <span>Junior Entreprise</span>
+            <span>CENTIC Entreprise</span>
           </div>
         </div>
-        
+
         <ScrollArea className="flex-1">
-          <nav className="grid items-start px-4 py-4 gap-1">
+          <nav className="grid items-start gap-1 px-4 py-4">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.to;
@@ -61,9 +61,7 @@ export function DashboardLayout() {
                   <Link to={item.to}>
                     <Icon className="mr-2 h-4 w-4" />
                     {item.label}
-                    {isActive && (
-                      <ChevronRight className="ml-auto h-4 w-4" />
-                    )}
+                    {isActive && <ChevronRight className="ml-auto h-4 w-4" />}
                   </Link>
                 </Button>
               );
@@ -71,22 +69,22 @@ export function DashboardLayout() {
           </nav>
         </ScrollArea>
 
-        <div className="p-4 border-t">
-          <div className="flex items-center gap-4 p-2 rounded-md hover:bg-accent/50 transition-colors">
+        <div className="border-t p-4">
+          <div className="flex items-center gap-4 rounded-md p-2 transition-colors hover:bg-accent/50">
             <Avatar className="h-9 w-9">
               <AvatarFallback>{userInitials}</AvatarFallback>
             </Avatar>
             <div className="grid gap-0.5 text-sm">
               <div className="font-medium">Admin</div>
-              <div className="text-xs text-muted-foreground truncate">
+              <div className="truncate text-xs text-muted-foreground">
                 {userEmail}
               </div>
             </div>
           </div>
-          
+
           <Button
             variant="ghost"
-            className="w-full justify-start mt-2 text-destructive hover:text-destructive"
+            className="mt-2 w-full justify-start text-destructive hover:text-destructive"
             asChild
           >
             <Link to="/logout">
@@ -99,10 +97,15 @@ export function DashboardLayout() {
 
       {/* Mobile sidebar */}
       <div className="md:hidden">
-        <div className={`fixed inset-0 z-40 ${mobileOpen ? 'block' : 'hidden'}`}>
-          <div className="fixed inset-0 bg-black/20" onClick={() => setMobileOpen(false)} />
+        <div
+          className={`fixed inset-0 z-40 ${mobileOpen ? 'block' : 'hidden'}`}
+        >
+          <div
+            className="fixed inset-0 bg-black/20"
+            onClick={() => setMobileOpen(false)}
+          />
           <div className="fixed inset-y-0 left-0 flex w-64 flex-col bg-card shadow-lg">
-            <div className="flex h-16 items-center justify-between px-6 border-b">
+            <div className="flex h-16 items-center justify-between border-b px-6">
               <div className="flex items-center gap-2 font-semibold">
                 <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
                   <span>J</span>
@@ -119,7 +122,7 @@ export function DashboardLayout() {
               </Button>
             </div>
             <ScrollArea className="flex-1">
-              <nav className="grid items-start px-4 py-4 gap-1">
+              <nav className="grid items-start gap-1 px-4 py-4">
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = location.pathname === item.to;
@@ -146,22 +149,22 @@ export function DashboardLayout() {
                 })}
               </nav>
             </ScrollArea>
-            <div className="p-4 border-t">
-              <div className="flex items-center gap-4 p-2 rounded-md">
+            <div className="border-t p-4">
+              <div className="flex items-center gap-4 rounded-md p-2">
                 <Avatar className="h-9 w-9">
                   <AvatarFallback>{userInitials}</AvatarFallback>
                 </Avatar>
                 <div className="grid gap-0.5 text-sm">
                   <div className="font-medium">Admin</div>
-                  <div className="text-xs text-muted-foreground truncate">
+                  <div className="truncate text-xs text-muted-foreground">
                     {userEmail}
                   </div>
                 </div>
               </div>
-              
+
               <Button
                 variant="ghost"
-                className="w-full justify-start mt-2 text-destructive hover:text-destructive"
+                className="mt-2 w-full justify-start text-destructive hover:text-destructive"
                 asChild
                 onClick={() => setMobileOpen(false)}
               >
@@ -188,17 +191,17 @@ export function DashboardLayout() {
               <span className="sr-only">Ouvrir le menu</span>
             </Button>
             <h1 className="text-lg font-semibold">
-              {navItems.find(item => item.to === location.pathname)?.label || 'Tableau de bord'}
+              {navItems.find((item) => item.to === location.pathname)?.label ||
+                'Tableau de bord'}
             </h1>
           </div>
-          <div className="flex items-center gap-4
-">
+          <div className="flex items-center gap-4">
             <Avatar className="h-8 w-8">
               <AvatarFallback>{userInitials}</AvatarFallback>
             </Avatar>
           </div>
         </header>
-        
+
         <main className="flex-1 overflow-auto p-4 md:p-6">
           <div className="mx-auto max-w-7xl">
             <Outlet />

@@ -1,4 +1,4 @@
-import { MantineThemeOverride } from '@mantine/core';
+import type { MantineThemeOverride } from '@mantine/core';
 
 export const theme: MantineThemeOverride = {
   // Couleurs principales
@@ -18,10 +18,11 @@ export const theme: MantineThemeOverride = {
       '#001a1a',
     ],
   },
-  
+
   // Police par défaut
-  fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-  
+  fontFamily:
+    '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+
   // Taille de police par défaut
   fontSizes: {
     xs: '0.75rem',
@@ -30,7 +31,7 @@ export const theme: MantineThemeOverride = {
     lg: '1.125rem',
     xl: '1.25rem',
   },
-  
+
   // Espacement
   spacing: {
     xs: '0.5rem',
@@ -39,7 +40,7 @@ export const theme: MantineThemeOverride = {
     lg: '1.5rem',
     xl: '2rem',
   },
-  
+
   // Rayon des coins (bordure arrondie)
   radius: {
     xs: '2px',
@@ -48,20 +49,20 @@ export const theme: MantineThemeOverride = {
     lg: '16px',
     xl: '32px',
   },
-  
+
   // Points de rupture pour le responsive
   breakpoints: {
-    xs: '36em',  // 576px
-    sm: '48em',  // 768px
-    md: '62em',  // 992px
-    lg: '75em',  // 1200px
-    xl: '88em',  // 1408px
+    xs: '36em', // 576px
+    sm: '48em', // 768px
+    md: '62em', // 992px
+    lg: '75em', // 1200px
+    xl: '88em', // 1408px
   },
-  
+
   // Autres options de thème
-  primaryColor: 'blue',
+  primaryColor: 'red',
   primaryShade: 6,
-  
+
   // Personnalisation des composants
   components: {
     // Exemple de personnalisation du bouton
@@ -73,7 +74,7 @@ export const theme: MantineThemeOverride = {
     },
     // Vous pouvez ajouter d'autres composants ici
   },
-  
+
   // Autres propriétés globales
   other: {
     // Vous pouvez ajouter des propriétés personnalisées ici

@@ -1,22 +1,41 @@
-// src/api/user.api.ts
-import axios from './api.config';
+import { api } from '../lib/api';
+
+export type User = {
+  id: string;
+  nom: string;
+  prenom: string;
+  email: string;
+  telephone?: string;
+  role: 'ADMIN' | 'FORMATEUR' | 'APPRENANT';
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type UserFilters = {
+  search?: string;
+  role?: string;
+  page?: number;
+  limit?: number;
+};
 
 export const userApi = {
-  // Obtenir le profil utilisateur
-  getProfile: () => axios.get('/users/profile/'),
+  // Récupérer tous les utilisateurs avec filtres
+  getUsers: (filters?: UserFilters) => 
+    api.get<User[]>('/dashboard/users', { params: filters }),
 
-  // Mettre à jour le profil
-  updateProfile: (data: {
-    first_name?: string;
-    last_name?: string;
-    email?: string;
-    phone?: string;
-  }) => axios.patch('/users/profile/', data),
+  // Récupérer un utilisateur par son ID
+  getUser: (id: string) => 
+    api.get<User>(`/dashboard/users/${id}`),
 
-  // Changer le mot de passe
-  changePassword: (data: { old_password: string; new_password: string }) =>
-    axios.post('/users/password-change/', data),
+  // Créer un nouvel utilisateur
+  createUser: (userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) =>
+    api.post<User>('/dashboard/users', userData),
 
-  // Supprimer le compte
-  deleteAccount: () => axios.delete('/users/delete-account/'),
+  // Mettre à jour un utilisateur
+  updateUser: (id: string, userData: Partial<Omit<User, 'id' | 'createdAt' | 'updatedAt'>>) =>
+    api.put<User>(`/dashboard/users/${id}`, userData),
+
+  // Supprimer un utilisateur
+  deleteUser: (id: string) => 
+    api.delete<{ success: boolean }>(`/dashboard/users/${id}`),
 };

@@ -9,13 +9,13 @@ const Hero: React.FC = () => {
             Technology Related Consultancy
           </p>
 
-          <h1 className="mt-4 text-4xl font-bold leading-tight md:text-6xl">
+          <h1 className="mt-4 text-4xl font-bold leading-tight text-white md:text-6xl">
             We Convert Concepts <br /> Into Technology
           </h1>
 
-          <p className="mt-6 max-w-2xl tracking-wide text-gray-300">
+          {/* <p className="mt-6 max-w-2xl tracking-wide text-gray-300">
             Consectetur adipiscing elit. Aenean scelerisque augue eu mauris
-          </p>
+          </p> */}
           <button className="mt-8 rounded-lg bg-blue-600 px-6 py-3 font-semibold transition hover:bg-blue-700">
             Explore More
           </button>

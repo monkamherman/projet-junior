@@ -1,9 +1,11 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+// Utilisation du proxy Vite en développement
+const isDev = import.meta.env.DEV;
+const API_URL = isDev ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:10000');
 
 export const api: AxiosInstance = axios.create({
-  baseURL: `${API_URL}/api`,
+  baseURL: isDev ? '/api' : `${API_URL}/api`,
   headers: {
     'Content-Type': 'application/json',
   },

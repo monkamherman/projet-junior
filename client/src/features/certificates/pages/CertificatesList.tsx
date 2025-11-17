@@ -10,7 +10,6 @@ import {
   Menu,
   Pagination,
   Paper,
-  Select,
   Table,
   Text,
   TextInput,
@@ -234,12 +233,12 @@ export function CertificatesList() {
             onChange={(e) => handleFilterChange('search', e.target.value)}
             style={{ flex: 1 }}
           />
-          <Select
+          {/* <Select
             placeholder="Statut"
             data={statusOptions}
             value={filters.statut}
             onChange={(value) => handleFilterChange('statut', value || '')}
-          />
+          /> */}
         </Group>
       </Paper>
 

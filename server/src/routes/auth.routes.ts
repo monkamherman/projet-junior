@@ -1,11 +1,12 @@
 import { Router } from "express";
-import { login, logout } from "../controllers/users/creat/auth";
+import { login, logout, refreshToken } from "../controllers/users/creat/auth";
 import { signup, sendOTP, verifyOTP } from "../controllers/users/creat/signup";
 
 const router = Router();
 
 // Authentification
 router.post("/login", login);
+router.post("/refresh", refreshToken);
 router.post("/logout", logout);
 
 // Inscription
