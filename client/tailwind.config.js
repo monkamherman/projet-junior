@@ -1,4 +1,5 @@
 /** @type {import('tailwindcss').Config} */
+import animate from 'tailwindcss-animate';
 export default {
   mode: 'jit',
   darkMode: ['class'],
@@ -127,5 +128,5 @@ export default {
       },
     },
   },
-  plugins: [require('tailwindcss-animate')],
+  plugins: [animate],
 };
