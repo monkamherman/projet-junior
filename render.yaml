@@ -1,5 +1,4 @@
 services:
-  # Service backend (API) - Node.js
   - type: web
     name: projet-junior-api
     env: node
@@ -8,38 +7,17 @@ services:
     startCommand: cd server && npm start
     healthCheckPath: /health
     envVars:
-      # Configuration du serveur
       - key: PORT
         value: 10000
       - key: NODE_ENV
         value: production
-
-      # Configuration de la base de données
       - key: DATABASE_URL
         value: "mongodb+srv://cesaristos5:D5NfqTbJGXpybjqL@k2ngrouptest.8xgdo.mongodb.net/test0?retryWrites=true&w=majority&appName=k2ngrouptest"
-      - key: MONGO_DB_NAME
-        value: test0
-
-      # Configuration CORS
       - key: ALLOWED_ORIGINS
         value: "https://projet-junior-client.onrender.com"
-
-      # Configuration JWT
       - key: JWT_SECRET
         generateValue: true
       - key: JWT_EXPIRES_IN
         value: 1d
-
-      # Configuration email
-      - key: SMTP_HOST
-        value: smtp.gmail.com
-      - key: SMTP_PORT
-        value: "587"
-      - key: SMTP_USER
-        sync: false
-      - key: SMTP_PASS
-        sync: false
-
-      # URL de l'application
       - key: APP_URL
         value: https://projet-junior-client.onrender.com
