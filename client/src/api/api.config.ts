@@ -3,7 +3,7 @@ import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import axios from 'axios';
 
 // Configuration de base
-const BASE_URL = 'http://localhost:10000';
+const BASE_URL = 'https://projet-junior-api.onrender.com';
 
 // Configuration axios par défaut
 export const axiosInstance = axios.create({
@@ -56,7 +56,7 @@ axiosInstance.interceptors.response.use(
           '/api/auth/refresh',
           { refresh: refreshToken }
         );
-        
+
         const { access } = response.data;
         localStorage.setItem('token', access);
 
