@@ -1,9 +1,9 @@
 /// <reference types="vite/client" />
 import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vite';
 import dotenv from 'dotenv';
 import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { defineConfig } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
 dotenv.config();
@@ -15,14 +15,25 @@ const __dirname = dirname(__filename);
 export default defineConfig({
   plugins: [react(), tsconfigPaths()],
 
+  // ✅ NOUVEAU : Configuration pour le déploiement
+  base: './',
+
   resolve: {
     alias: [
       { find: '@', replacement: path.resolve(__dirname, 'src') },
       { find: 'process', replacement: 'process/browser' },
       { find: 'stream', replacement: 'stream-browserify' },
       { find: 'zlib', replacement: 'browserify-zlib' },
-      { find: 'util', replacement: 'util' }
-    ]
+      { find: 'util', replacement: 'util' },
+    ],
+  },
+
+  // ✅ NOUVEAU : Configuration build pour SPA
+  build: {
+    outDir: 'dist',
+    rollupOptions: {
+      input: './index.html',
+    },
   },
 
   server: {
@@ -32,7 +43,6 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:10000',
         changeOrigin: true,
-        // Ne pas supprimer le préfixe /api
       },
     },
   },
