@@ -4,7 +4,7 @@ services:
     name: projet-junior-api
     env: node
     plan: free
-    buildCommand: cd server && npm install && npx prisma generate
+    buildCommand: cd server && npm install --legacy-peer-deps && npx prisma generate
     startCommand: cd server && npm start
     healthCheckPath: /health
     envVars:
