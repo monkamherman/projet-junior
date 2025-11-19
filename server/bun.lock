@@ -28,7 +28,7 @@
         "morgan": "^1.10.0",
         "nodemailer": "^7.0.10",
         "pdfkit": "0.13.0",
-        "prisma": "^6.3.0",
+        "prisma": "6.3.0",
         "rate-limit-redis": "^4.2.0",
         "redis": "^4.7.0",
         "swagger-jsdoc": "^6.2.8",

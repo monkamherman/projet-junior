@@ -11,7 +11,7 @@
     "dev": "ts-node-dev --respawn --clear --transpile-only --ignore-watch node_modules ./src/app.ts",
     "build": "rimraf ./dist && tsc",
     "start": "node dist/app.js",
-    "start:prod": "NODE_ENV=production node dist/app.js",
+    "start:prod": "NODE_ENV=production PORT=10000 node dist/index.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy"
   },
@@ -62,7 +62,7 @@
     "morgan": "^1.10.0",
     "nodemailer": "^7.0.10",
     "pdfkit": "0.13.0",
-    "prisma": "^6.3.0",
+    "prisma": "6.3.0",
     "rate-limit-redis": "^4.2.0",
     "redis": "^4.7.0",
     "swagger-jsdoc": "^6.2.8",

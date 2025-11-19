@@ -40,7 +40,11 @@ const app = express();
 // Configuration CORS simplifiée pour le développement
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
-    const allowedOrigins = ["http://localhost:3000", "http://localhost:4000"];
+    const allowedOrigins = [
+      "http://localhost:3000",
+      "http://localhost:4000",
+      "https://projet-junior-client.onrender.com",
+    ];
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {

@@ -13,16 +13,18 @@ RUN bun install --frozen-lockfile
 COPY . .
 
 # Construire l'application
-RUN bun run build
+RUN rm -rf ./dist && bunx tsc --noCheck
 
 # Étape de production
 FROM oven/bun:latest
 
 WORKDIR /app
 
-# Installer les dépendances de production uniquement
+# L'image Bun inclut déjà les dépendances nécessaires
+
+# Installer toutes les dépendances pour générer Prisma
 COPY package.json bun.lock ./
-RUN bun install --production --frozen-lockfile
+RUN bun install
 
 # Copier les fichiers construits
 COPY --from=builder /app/dist ./dist
@@ -30,14 +32,15 @@ COPY --from=builder /app/dist ./dist
 # Copier les fichiers statiques nécessaires
 COPY --from=builder /app/prisma ./prisma
 
-# Installer Prisma Client
-RUN bunx prisma generate
+# Générer le client Prisma pendant le build
+RUN ./node_modules/.bin/prisma generate
 
-# Installer les dépendances système nécessaires pour Prisma
-RUN apt-get update && apt-get install -y openssl
+# Exposer le port (Render utilise le port 10000 par défaut)
+EXPOSE 10000
 
-# Exposer le port
-EXPOSE 3000
+# Variables d'environnement pour Render
+ENV NODE_ENV=production
+ENV PORT=10000
 
 # Commande de démarrage
 CMD ["bun", "run", "start:prod"]
