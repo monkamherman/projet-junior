@@ -60,7 +60,7 @@ services:
 
   # Note: Vous n'avez pas besoin de la section databases puisque vous utilisez MongoDB Atlas
   # Frontend React (sans Docker)
-  - type: static
+  - type: web
     name: projet-junior-client
     buildCommand: cd client && bun run build
     publishPath: ./client/build
