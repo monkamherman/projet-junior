@@ -63,7 +63,7 @@ services:
   - type: web
     name: projet-junior-client
     buildCommand: cd client && bun run build
-    publishPath: ./client/build
+    publishPath: ./client/dist
     envVars:
       - key: REACT_APP_API_URL
         value: https://projet-junior-api.onrender.com
