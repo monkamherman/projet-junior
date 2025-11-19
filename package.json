@@ -3,5 +3,8 @@
     "@emotion/react": "^11.14.0",
     "@mantine/core": "^8.3.8",
     "@mantine/hooks": "^8.3.8"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.1.1"
   }
 }

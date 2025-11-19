@@ -1,6 +1,6 @@
-import react from '@vitejs/plugin-react-swc';
+/// <reference types="vite/client" />
+import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
-// import { envs } from './src/core/config/env';
 import dotenv from 'dotenv';
 import path, { dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -16,10 +16,13 @@ export default defineConfig({
   plugins: [react(), tsconfigPaths()],
 
   resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-      process: path.resolve(__dirname, 'node_modules/process'),
-    },
+    alias: [
+      { find: '@', replacement: path.resolve(__dirname, 'src') },
+      { find: 'process', replacement: 'process/browser' },
+      { find: 'stream', replacement: 'stream-browserify' },
+      { find: 'zlib', replacement: 'browserify-zlib' },
+      { find: 'util', replacement: 'util' }
+    ]
   },
 
   server: {
@@ -30,8 +33,8 @@ export default defineConfig({
         target: 'http://localhost:10000',
         changeOrigin: true,
         // Ne pas supprimer le préfixe /api
-      }
-    }
+      },
+    },
   },
 
   preview: {
