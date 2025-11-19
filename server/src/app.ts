@@ -35,7 +35,7 @@ const morganStream = {
   },
 };
 
-const app = express();
+export const app = express();
 
 // Configuration CORS simplifiée pour le développement
 const corsOptions: cors.CorsOptions = {
