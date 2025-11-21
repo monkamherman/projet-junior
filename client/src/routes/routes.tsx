@@ -8,6 +8,7 @@ import Register from '@/pages/auth/Register';
 import ResetPassword from '@/pages/auth/ResetPassword';
 import VerifyOTP from '@/pages/auth/VerifyOTP';
 import Home from '@/pages/home/Home';
+import APropos from '@/pages/APropos';
 import { createBrowserRouter } from 'react-router-dom';
 
 /**
@@ -37,6 +38,11 @@ const RouterInstance = createBrowserRouter([
       {
         path: 'profile',
         element: <ProfilePage />,
+      },
+      // Page À propos
+      {
+        path: 'a-propos',
+        element: <APropos />,
       },
       // Public catch-all -> 404
       { path: '*', element: <DynamicPageLoader pageKey="error/PageError" /> },

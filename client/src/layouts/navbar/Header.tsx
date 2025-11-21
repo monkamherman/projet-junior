@@ -27,7 +27,7 @@ const Header: React.FC = () => {
         <Link to="/" className="transition hover:text-blue-400">
           Accueil
         </Link>
-        <Link to="/about" className="transition hover:text-blue-400">
+        <Link to="/a-propos" className="transition hover:text-blue-400">
           À propos
         </Link>
         <Link to="/formations" className="transition hover:text-blue-400">
