@@ -10,20 +10,53 @@ const Header: React.FC = () => {
 
   if (isLoading) {
     return (
-      <header className="sticky top-0 z-50 flex items-center justify-between bg-gray-950/80 px-8 py-4 backdrop-blur-md">
-        <img src="/logo.jpg" className="h-12 w-16 rounded" alt="Logo" />
-        <div className="h-10 w-10 animate-pulse rounded-full bg-gray-700"></div>
+      <header className="sticky top-0 z-50 flex flex-col bg-gray-950/80 backdrop-blur-md">
+        <div className="flex items-center justify-between px-8 py-4">
+          <img src="/logo.jpg" className="h-12 w-16 rounded" alt="Logo" />
+          <div className="h-10 w-10 animate-pulse rounded-full bg-gray-700"></div>
+        </div>
       </header>
     );
   }
 
   return (
-    <header className="sticky top-0 z-50 flex items-center justify-between bg-gray-600/50 px-8 py-4 backdrop-blur-md">
-      <Link to="/" className="flex items-center">
-        <img src="/logo.jpg" className="h-12 w-16 rounded" alt="Logo" />
-      </Link>
+    <header className="sticky top-0 z-50 flex flex-col bg-gray-600/50 backdrop-blur-md">
+      <div className="flex items-center justify-between px-8 py-4">
+        <Link to="/" className="flex items-center">
+          <img src="/logo.jpg" className="h-12 w-16 rounded" alt="Logo" />
+        </Link>
 
-      <nav className="hidden gap-6 md:flex">
+        <nav className="hidden gap-6 md:flex">
+          <Link to="/" className="transition hover:text-blue-400">
+            Accueil
+          </Link>
+          <Link to="/a-propos" className="transition hover:text-blue-400">
+            À propos
+          </Link>
+          <Link to="/formations" className="transition hover:text-blue-400">
+            Formations
+          </Link>
+          <Link to="/apprenants" className="transition hover:text-blue-400">
+            Apprenants
+          </Link>
+        </nav>
+
+        <div className="flex items-center gap-4">
+          {isAuthenticated ? (
+            <UserAvatar />
+          ) : (
+            <Button
+              onClick={() => navigate('/login')}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Connexion
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Navbar secondaire visible uniquement sur petits écrans */}
+      <nav className="flex justify-around border-t border-gray-500 bg-gray-700/80 px-4 py-2 md:hidden">
         <Link to="/" className="transition hover:text-blue-400">
           Accueil
         </Link>
@@ -37,19 +70,6 @@ const Header: React.FC = () => {
           Apprenants
         </Link>
       </nav>
-
-      <div className="flex items-center gap-4">
-        {isAuthenticated ? (
-          <UserAvatar />
-        ) : (
-          <Button
-            onClick={() => navigate('/login')}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            Connexion
-          </Button>
-        )}
-      </div>
     </header>
   );
 };
