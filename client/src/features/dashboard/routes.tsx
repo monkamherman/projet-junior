@@ -5,7 +5,7 @@ import { UsersList } from '@/features/users/pages/UsersList';
 import { CertificatesList } from '@/features/certificates/pages/CertificatesList';
 import { ProfilePage } from '@/features/profile/pages/ProfilePage';
 import { FormationsList } from '@/features/formations/pages/FormationsList';
-import { CreateFormationPage } from './pages/formations/CreateFormationPage';
+import CreateFormationPage from './pages/formations/CreateFormationPage';
 import { PaymentsList } from '@/features/payments/pages/PaymentsList';
 
 export const dashboardRoutes = [
