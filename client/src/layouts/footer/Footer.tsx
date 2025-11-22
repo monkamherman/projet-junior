@@ -1,134 +1,111 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
-import FlickeringGrid from "@/components/ui/flickering-grid";
-import { TextAnimate } from "@/components/ui/text-animate";
-// import { FootersLinks, SocialLink } from '@/core/mocks/footer.mock'
-
-/**
- * Functional component for rendering a footer
- * @parmams
- * @returns JSX element representing the footer
- * */
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { FaFacebook, FaTwitter, FaLinkedin, FaYoutube, FaMapMarkerAlt, FaPhone, FaEnvelope } from 'react-icons/fa';
 
 const Footer: React.FC = () => {
   return (
-    <footer className='w-full border-t border-t-foreground/80'>
-      footer
+    <footer className="bg-gray-900 text-white pt-12 pb-6">
+      <div className="container mx-auto px-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {/* À propos */}
+          <div className="mb-8">
+            <h3 className="text-xl font-bold mb-4 flex items-center">
+              <img src="/logo.jpg" alt="CENTIC Logo" className="h-10 w-10 mr-2 rounded" />
+              CENTIC
+            </h3>
+            <p className="text-gray-300 mb-4">
+              Centre d'Éducation aux Outils de NTIC, œuvrant pour la formation des jeunes aux métiers du numérique dans la région du Septentrion au Cameroun.
+            </p>
+            <div className="flex space-x-4">
+              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                <FaFacebook size={20} />
+              </a>
+              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                <FaTwitter size={20} />
+              </a>
+              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                <FaLinkedin size={20} />
+              </a>
+              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                <FaYoutube size={20} />
+              </a>
+            </div>
+          </div>
 
-      {/* Profile */}
-      <div className="border-t border-t-foreground/40 w-full px-1 py-[3px] space-x-1 font-light text-sm flex justify-center bg-foreground/50">
-        <span>Conception et Realisation par</span>
+          {/* Liens rapides */}
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold mb-4">Liens rapides</h3>
+            <ul className="space-y-2">
+              <li><Link to="/" className="text-gray-300 hover:text-white transition-colors">Accueil</Link></li>
+              <li><Link to="/a-propos" className="text-gray-300 hover:text-white transition-colors">À propos</Link></li>
+              <li><Link to="/formations" className="text-gray-300 hover:text-white transition-colors">Formations</Link></li>
+              <li><Link to="/actualites" className="text-gray-300 hover:text-white transition-colors">Actualités</Link></li>
+              <li><Link to="/contact" className="text-gray-300 hover:text-white transition-colors">Contact</Link></li>
+            </ul>
+          </div>
 
-        <TooltipProvider
-          delayDuration={100}
-        >
-          <Tooltip>
-            <TooltipTrigger>
-              <Link
-                to={'https://www.linkedin.com/in/herman-m-b565032b1/'}
-                target='_blank'
-                rel="noopener noreferrer"
-                className='font-normal text-primary/70 hover:text-primary/70 hover:underline duration-200 text-nowrap'
-              >
-               Moukam Herman
-              </Link>
-            </TooltipTrigger>
+          {/* Contact */}
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold mb-4">Contactez-nous</h3>
+            <ul className="space-y-3">
+              <li className="flex items-start">
+                <FaMapMarkerAlt className="mt-1 mr-2 text-primary-400" />
+                <span className="text-gray-300">Maroua, Région de l'Extrême-Nord, Cameroun</span>
+              </li>
+              <li className="flex items-center">
+                <FaPhone className="mr-2 text-primary-400" />
+                <a href="tel:+237690000000" className="text-gray-300 hover:text-white transition-colors">+237 6 90 00 00 00</a>
+              </li>
+              <li className="flex items-center">
+                <FaEnvelope className="mr-2 text-primary-400" />
+                <a href="mailto:contact@centic-cm.org" className="text-gray-300 hover:text-white transition-colors">contact@centic-cm.org</a>
+              </li>
+            </ul>
+          </div>
 
-            <TooltipContent className='px-6 py-2 relative bg-footer border border-footer-foreground text-footer-foreground text-xs'>
-              <p className='relative z-30 space-y-3 leading-4'>
-                <p className="flex flex-col gap-2">
-                  <span className="bg-footer w-fit">
-                    <TextAnimate animation="slideLeft" by="character">
-                      Hello, je suis Moukam Herman,
-                    </TextAnimate>
-                  </span>
-                  <p className="">
-                    <span className="bg-footer">
-                      Je suis un <b>Developpeur Web MERN-stack </b> passioner,
-                    </span>
-                    <br />
-                    <span className="bg-footer">
-                      specializing in crafting efficient and tailored digital solutions.
-                    </span>
-                    <br />
-                    <span className="bg-footer">
-                      An expert in transforming ideas into modern applications,
-                    </span>
-                    <br />
-                    <span className="bg-footer">
-                      I combine creativity with technical precision.
-                    </span>
-                    <br />
-                    <span className="bg-footer">
-                      Always seeking innovation, I am committed to tackling
-                    </span>
-                    <br />
-                    <span className="bg-footer">
-                      digital challenges with professionalism and efficiency.
-                    </span>
-                  </p>
-                </p>
-
-                <p className="flex items-center gap-10">
-                  <p className="bg-footer flex flex-col gap-2 leading-3 w-fit">
-                    <span>je suis disposer a vous repondre</span>
-                    <span>contacter moi</span>
-                  </p>
-
-                  {/* Contact Informations */}
-                  <div className="leading-4">
-                    <p className="bg-footer w-fit">
-                      Linkedin:
-                      <Link
-                        to={'https://www.linkedin.com/in/herman-m-b565032b1/'}
-                        target='_blank'
-                        className='font-medium text-primary/85 hover:text-primary duration-200 text-nowrap'
-                      >
-                        <TextAnimate animation="blurIn" className='inline ml-2'>
-                          Mon profile LinkedIn 
-                        </TextAnimate>
-                      </Link>
-                    </p>
-
-                    <p className="bg-footer w-fit">
-                      Whatsapp:
-                      <Link
-                        to={'https://wa.me/237658852731?text=bonjour%20Moukam%20Herman%20dev'}
-                        target='_blank'
-                        rel="noopener noreferrer"
-                        className='font-medium text-primary/85 hover:text-primary duration-200 text-nowrap'
-                      >
-                        <TextAnimate animation="blurIn" by="character" className='inline ml-2'>
-                          +237 658 852 731
-                        </TextAnimate>
-                      </Link>
-                    </p>
-                  </div>
-                </p>
-              </p>
-
-              <FlickeringGrid
-                className="z-0 absolute inset-0 size-full"
-                squareSize={4}
-                gridGap={6}
-                color="#2f22f2"
-                maxOpacity={0.3}
-                flickerChance={0.8}
-                height={800}
-                width={800}
+          {/* Newsletter */}
+          <div className="mb-8">
+            <h3 className="text-lg font-semibold mb-4">Newsletter</h3>
+            <p className="text-gray-300 mb-4">Inscrivez-vous à notre newsletter pour recevoir nos dernières actualités.</p>
+            <form className="flex flex-col space-y-2">
+              <input
+                type="email"
+                placeholder="Votre adresse email"
+                className="px-4 py-2 rounded bg-gray-800 border border-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-primary-500"
+                required
               />
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+              <button
+                type="submit"
+                className="bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded transition-colors"
+              >
+                S'abonner
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {/* Copyright */}
+        <div className="border-t border-gray-800 pt-6 mt-8">
+          <div className="flex flex-col md:flex-row justify-between items-center">
+            <p className="text-gray-400 text-sm mb-4 md:mb-0">
+              © {new Date().getFullYear()} CENTIC. Tous droits réservés.
+            </p>
+            <div className="flex space-x-6">
+              <Link to="/mentions-legales" className="text-gray-400 hover:text-white text-sm transition-colors">
+                Mentions légales
+              </Link>
+              <Link to="/politique-confidentialite" className="text-gray-400 hover:text-white text-sm transition-colors">
+                Politique de confidentialité
+              </Link>
+              <Link to="/conditions-utilisation" className="text-gray-400 hover:text-white text-sm transition-colors">
+                Conditions d'utilisation
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
     </footer>
-  )
-}
+  );
+};
 
-export default Footer
+export default Footer;
