@@ -27,16 +27,19 @@ enum StatutInscription {
 }
 
 enum ModePaiement {
-  MOBILE_MONEY
+  ORANGE_MONEY
+  MTN_MONEY
   CARTE
   ESPECES
   VIREMENT
 }
 
 enum StatutPaiement {
-  EN_ATTENTE
-  SUCCES
-  ECHEC
+  EN_ATTENTE  // En attente de confirmation
+  EN_COURS    // Paiement en cours de traitement
+  VALIDE      // Paiement validé
+  ANNULE      // Paiement annulé
+  ECHEC       // Échec du paiement
 }
 
 enum StatutAttestation {
@@ -88,6 +91,7 @@ model Inscription {
   dateInscription DateTime          @default(now())
   statut          StatutInscription @default(EN_ATTENTE)
 
+  // Relations
   utilisateur   Utilisateur  @relation(fields: [utilisateurId], references: [id])
   utilisateurId String       @db.ObjectId
   formation     Formation    @relation(fields: [formationId], references: [id])
@@ -105,12 +109,18 @@ model Paiement {
   mode         ModePaiement
   statut       StatutPaiement @default(EN_ATTENTE)
   datePaiement DateTime       @default(now())
-  commentaire  String?
+  telephone    String         // Numéro de téléphone de l'utilisateur
+  operateur    String?        // Opérateur (MTN, Orange, etc.)
+  code         String?        // Code de transaction
+  commentaire  String?        // Commentaire supplémentaire
 
+  // Relations
   utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id])
   utilisateurId String      @db.ObjectId
-  inscription   Inscription @relation("PaiementInscription", fields: [inscriptionId], references: [id])
-  inscriptionId String      @unique @db.ObjectId
+  formation     Formation   @relation(fields: [formationId], references: [id])
+  formationId   String      @db.ObjectId
+  inscription   Inscription? @relation("PaiementInscription", fields: [inscriptionId], references: [id])
+  inscriptionId String?     @db.ObjectId
 
   @@map("paiements")
 }

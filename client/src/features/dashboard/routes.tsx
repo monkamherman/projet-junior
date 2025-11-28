@@ -6,6 +6,7 @@ import { CertificatesList } from '@/features/certificates/pages/CertificatesList
 import { ProfilePage } from '@/features/profile/pages/ProfilePage';
 import { FormationsList } from '@/features/formations/pages/FormationsList';
 import CreateFormationPage from './pages/formations/CreateFormationPage';
+import EditFormationPage from '@/features/formations/pages/EditFormationPage';
 import { PaymentsList } from '@/features/payments/pages/PaymentsList';
 
 export const dashboardRoutes = [
@@ -31,6 +32,10 @@ export const dashboardRoutes = [
           {
             path: 'new',
             element: <CreateFormationPage />,
+          },
+          {
+            path: 'edit/:id',
+            element: <EditFormationPage />,
           },
         ],
       },

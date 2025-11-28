@@ -13,22 +13,47 @@ export default function CreateFormationPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
   const handleSubmit = async (data: FormationFormValues) => {
+    console.log('handleSubmit appelé avec les données:', data);
+    
     const token = localStorage.getItem('token');
+    console.log('Token récupéré:', token ? 'présent' : 'absent');
+    
     if (!token) {
+      console.error('Aucun token trouvé dans le localStorage');
       toast.error('Vous devez être connecté pour créer une formation');
       return;
     }
 
+    setFormErrors({});
     setIsSubmitting(true);
+    console.log('Début de la soumission...');
+    
     try {
-      await createFormation(data, token);
+      console.log('Appel de createFormation avec les données:', data);
+      const result = await createFormation(data, token);
+      console.log('Réponse de createFormation:', result);
+      
       toast.success('La formation a été créée avec succès');
+      console.log('Redirection vers /dashboard/formations');
       navigate('/dashboard/formations');
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Une erreur est survenue lors de la création de la formation';
-      toast.error(errorMessage);
+    } catch (error: any) {
+      console.error('Erreur lors de la soumission du formulaire:', error);
+      
+      // Gestion des erreurs de validation
+      if (error.validationErrors) {
+        console.log('Erreurs de validation:', error.validationErrors);
+        setFormErrors(error.validationErrors);
+        toast.error('Veuillez corriger les erreurs dans le formulaire');
+      } else {
+        const errorMessage = error.message || 'Une erreur est survenue lors de la création de la formation';
+        console.error('Message d\'erreur:', errorMessage);
+        toast.error(errorMessage);
+      }
     } finally {
+      console.log('Fin de la soumission, isSubmitting = false');
       setIsSubmitting(false);
     }
   };
@@ -49,7 +74,11 @@ export default function CreateFormationPage() {
           <CardTitle>Créer une nouvelle formation</CardTitle>
         </CardHeader>
         <CardContent>
-          <FormationForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
+          <FormationForm 
+            onSubmit={handleSubmit} 
+            isSubmitting={isSubmitting} 
+            errors={formErrors}
+          />
         </CardContent>
       </Card>
     </div>

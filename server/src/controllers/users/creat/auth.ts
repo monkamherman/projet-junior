@@ -5,30 +5,68 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-const JWT_SECRET = process.env.JWT_SECRET || "votre_cle_secrete";
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET is not defined in environment variables');
+}
 
 export async function login(req: Request, res: Response) {
+  console.log('Tentative de connexion avec:', { email: req.body.email });
   const { email, motDePasse } = req.body;
 
+  if (!email || !motDePasse) {
+    console.error('Email ou mot de passe manquant');
+    return res.status(400).json({ message: 'Email et mot de passe sont requis' });
+  }
+
   try {
+    console.log('Recherche de l\'utilisateur dans la base de données...');
     const user = await prisma.utilisateur.findUnique({ where: { email } });
+    
     if (!user) {
-      return res.status(401).json({ message: "Email ou mot de passe incorrect." });
+      console.error('Utilisateur non trouvé pour l\'email:', email);
+      return res.status(401).json({ message: 'Email ou mot de passe incorrect.' });
     }
 
+    console.log('Utilisateur trouvé, vérification du mot de passe...');
     const validPassword = await bcrypt.compare(motDePasse, user.motDePasse);
+    
     if (!validPassword) {
-      return res.status(401).json({ message: "Email ou mot de passe incorrect." });
+      console.error('Mot de passe incorrect pour l\'utilisateur:', email);
+      return res.status(401).json({ message: 'Email ou mot de passe incorrect.' });
     }
 
-    const accessToken = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, {
-      expiresIn: "1h",
-    });
+    console.log('Création des tokens JWT...');
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET non défini');
+      throw new Error('JWT_SECRET is not defined');
+    }
+    
+    if (!process.env.JWT_REFRESH_SECRET) {
+      console.error('JWT_REFRESH_SECRET non défini');
+      throw new Error('JWT_REFRESH_SECRET is not defined');
+    }
+
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET is not defined in environment variables');
+    }
+    
+    const accessToken = jwt.sign(
+      { userId: user.id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' } as const
+    ) as string;
     
     // Créer un refresh token
-    const refreshToken = jwt.sign({ userId: user.id }, JWT_SECRET, {
-      expiresIn: "7d",
-    });
+    if (!process.env.JWT_REFRESH_SECRET) {
+      throw new Error('JWT_REFRESH_SECRET is not defined in environment variables');
+    }
+    
+    const refreshToken = jwt.sign(
+      { userId: user.id },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: '7d' } as const
+    ) as string;
 
     // Retourner les tokens et les informations utilisateur
     res.json({
@@ -55,8 +93,13 @@ export async function refreshToken(req: Request, res: Response) {
     return res.status(401).json({ message: "Refresh token manquant." });
   }
 
+  if (!process.env.JWT_REFRESH_SECRET) {
+    console.error('JWT_REFRESH_SECRET non défini');
+    return res.status(500).json({ message: "Erreur de configuration du serveur." });
+  }
+
   try {
-    const decoded = jwt.verify(refresh, JWT_SECRET) as { userId: string };
+    const decoded = jwt.verify(refresh, process.env.JWT_REFRESH_SECRET) as { userId: string };
     
     const user = await prisma.utilisateur.findUnique({
       where: { id: decoded.userId },
@@ -73,11 +116,16 @@ export async function refreshToken(req: Request, res: Response) {
       return res.status(404).json({ message: "Utilisateur non trouvé." });
     }
 
+    if (!process.env.JWT_SECRET) {
+      console.error('JWT_SECRET non défini');
+      return res.status(500).json({ message: "Erreur de configuration du serveur." });
+    }
+
     const newAccessToken = jwt.sign(
       { userId: user.id, role: user.role },
-      JWT_SECRET,
-      { expiresIn: "1h" }
-    );
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' } as const
+    ) as string;
 
     res.json({
       access: newAccessToken,

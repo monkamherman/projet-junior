@@ -27,6 +27,16 @@ export default defineConfig({
       { find: 'util', replacement: 'util' },
     ],
   },
+  
+  server: {
+    proxy: {
+      '/api': {
+        target: 'http://localhost:10000',
+        changeOrigin: true,
+        secure: false
+      }
+    }
+  },
 
   // ✅ NOUVEAU : Configuration build pour SPA
   build: {

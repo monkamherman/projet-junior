@@ -1,7 +1,8 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, SubmitHandler } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
+import { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -14,6 +15,8 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { format, parseISO } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import { toast } from '@/components/ui/use-toast';
 import { formationSchema, type FormationFormValues } from '../schemas/formation.schema';
 import {
@@ -23,189 +26,65 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 
 interface FormationFormProps {
   onSubmit: (data: FormationFormValues) => Promise<void>;
   defaultValues?: Partial<FormationFormValues>;
   isSubmitting?: boolean;
+  errors?: Record<string, string>;
 }
 
-export function FormationForm({ onSubmit, defaultValues, isSubmitting = false }: FormationFormProps) {
+export function FormationForm({ onSubmit, defaultValues, isSubmitting = false, errors = {} }: FormationFormProps) {
   const form = useForm<FormationFormValues>({
-    resolver: zodResolver(formationSchema) as any, // Type assertion to fix the resolver type
+    resolver: zodResolver(formationSchema),
     defaultValues: {
-      title: '',
+      titre: '',
       description: '',
-      category: '',
-      duration: 1,
-      level: 'débutant' as const,
-      price: 0,
-      isPublished: false,
-      startDate: new Date().toISOString(),
-      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 jours plus tard
+      prix: 0,
+      dateDebut: format(new Date(), 'yyyy-MM-dd'),
+      dateFin: format(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd'),
+      statut: 'BROUILLON',
       ...defaultValues,
-    },
+    } as FormationFormValues,
   });
 
-  const handleSubmit: SubmitHandler<FormationFormValues> = async (data) => {
-    try {
-      await onSubmit(data);
-      toast({
-        title: 'Succès',
-        description: 'La formation a été enregistrée avec succès.',
+  // Effet pour afficher les erreurs de validation du serveur
+  useEffect(() => {
+    if (Object.keys(errors).length > 0) {
+      Object.entries(errors).forEach(([fieldName, errorMessage]) => {
+        form.setError(fieldName as keyof FormationFormValues, {
+          type: 'server',
+          message: errorMessage,
+        });
       });
+    }
+  }, [errors, form]);
+
+  const handleSubmit = async (data: FormationFormValues) => {
+    try {
+      console.log('Données du formulaire à soumettre:', data);
+      await onSubmit(data);
     } catch (error) {
       console.error('Erreur lors de la soumission du formulaire:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Une erreur est survenue lors de l\'enregistrement de la formation.',
-        variant: 'destructive',
-      });
+      // Les erreurs sont maintenant gérées par le composant parent
     }
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6">
           <FormField
             control={form.control}
-            name="title"
+            name="titre"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Titre</FormLabel>
+                <FormLabel>Titre de la formation</FormLabel>
                 <FormControl>
                   <Input placeholder="Titre de la formation" {...field} />
                 </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="category"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Catégorie</FormLabel>
-                <FormControl>
-                  <Input placeholder="Catégorie" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="level"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Niveau</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner un niveau" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="débutant">Débutant</SelectItem>
-                    <SelectItem value="intermédiaire">Intermédiaire</SelectItem>
-                    <SelectItem value="avancé">Avancé</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="duration"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Durée (en heures)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    min="1"
-                    {...field}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="price"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Prix (FCFA)</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    {...field}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="startDate"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Date de début</FormLabel>
-                <FormControl>
-                  <Input
-                    type="datetime-local"
-                    {...field}
-                    value={field.value ? field.value.substring(0, 16) : ''}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="endDate"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Date de fin</FormLabel>
-                <FormControl>
-                  <Input
-                    type="datetime-local"
-                    {...field}
-                    value={field.value ? field.value.substring(0, 16) : ''}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="imageUrl"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>URL de l'image</FormLabel>
-                <FormControl>
-                  <Input placeholder="https://example.com/image.jpg" {...field} />
-                </FormControl>
                 <FormDescription>
-                  URL de l'image de couverture de la formation
+                  Le titre doit être clair et descriptif
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -214,49 +93,131 @@ export function FormationForm({ onSubmit, defaultValues, isSubmitting = false }:
 
           <FormField
             control={form.control}
-            name="isPublished"
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Description</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Description détaillée de la formation..."
+                    className="min-h-[120px]"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <FormField
+              control={form.control}
+              name="prix"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Prix (FCFA)</FormLabel>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    {...field}
+                    onChange={(e) => field.onChange(Number(e.target.value))}
+                  />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="dateDebut"
+              render={({ field }) => {
+                const today = format(new Date(), 'yyyy-MM-dd');
+                return (
+                  <FormItem>
+                    <FormLabel>Date de début</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="date"
+                        {...field}
+                        min={today}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
+
+            <FormField
+              control={form.control}
+              name="dateFin"
+              render={({ field }) => {
+                const startDate = form.watch('dateDebut') || format(new Date(), 'yyyy-MM-dd');
+                return (
+                  <FormItem>
+                    <FormLabel>Date de fin</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="date"
+                        {...field}
+                        min={startDate}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
+            />
+          </div>
+
+          <FormField
+            control={form.control}
+            name="statut"
             render={({ field }) => (
               <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
                 <div className="space-y-0.5">
-                  <FormLabel className="text-base">Publier la formation</FormLabel>
+                  <FormLabel className="text-base">Statut de la formation</FormLabel>
                   <FormDescription>
-                    Cette formation sera visible par tous les utilisateurs si elle est publiée.
+                    Une formation en brouillon n'est pas visible des apprenants
                   </FormDescription>
                 </div>
                 <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Sélectionner un statut" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="BROUILLON">Brouillon</SelectItem>
+                      <SelectItem value="OUVERTE">Ouverte</SelectItem>
+                      <SelectItem value="TERMINEE">Terminée</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </FormControl>
               </FormItem>
             )}
           />
         </div>
 
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Description</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Description détaillée de la formation..."
-                  className="min-h-[200px]"
-                  {...field}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
         <div className="flex justify-end gap-4">
-          <Button type="button" variant="outline" onClick={() => form.reset()}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => form.reset()}
+            disabled={isSubmitting}
+          >
             Réinitialiser
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
+          <Button 
+            type="submit" 
+            disabled={isSubmitting}
+            className="min-w-[200px]"
+          >
             {isSubmitting ? 'Enregistrement...' : 'Enregistrer la formation'}
           </Button>
         </div>

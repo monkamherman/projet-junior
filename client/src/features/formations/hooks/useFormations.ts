@@ -1,5 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { toast } from '@/components/ui/use-toast';
 
 export interface Formation {
   id: string;
@@ -46,5 +47,57 @@ export function useGenerateAttestation(formationId: string) {
       return url;
     },
     enabled: false, // Ne pas exécuter automatiquement
+  });
+}
+
+export function useUpdateFormation() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async ({ id, ...data }: { id: string } & Partial<Formation>) => {
+      const response = await api.put(`/api/formations/${id}`, data);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-formations'] });
+      toast({
+        title: 'Succès',
+        description: 'La formation a été mise à jour avec succès',
+        variant: 'default',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erreur',
+        description: error.response?.data?.message || 'Une erreur est survenue',
+        variant: 'destructive',
+      });
+    },
+  });
+}
+
+export function useDeleteFormation() {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const response = await api.delete(`/api/formations/${id}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-formations'] });
+      toast({
+        title: 'Succès',
+        description: 'La formation a été supprimée avec succès',
+        variant: 'default',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erreur',
+        description: error.response?.data?.message || 'Une erreur est survenue',
+        variant: 'destructive',
+      });
+    },
   });
 }

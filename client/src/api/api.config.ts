@@ -3,15 +3,19 @@ import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import axios from 'axios';
 
 // Configuration de base
-const BASE_URL = 'https://projet-junior-api.onrender.com';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:10000';
+
+console.log('Configuration de l\'API - URL de base:', BASE_URL, '(Mode:', import.meta.env.MODE + ')');
 
 // Configuration axios par défaut
 export const axiosInstance = axios.create({
   baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
+    'Accept': 'application/json',
   },
   withCredentials: true,
+  timeout: 10000, // 10 secondes de timeout
 });
 
 // Intercepteur pour ajouter le token d'authentification

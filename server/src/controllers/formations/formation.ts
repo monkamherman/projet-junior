@@ -28,22 +28,67 @@ export async function getFormationById(req: Request, res: Response) {
 }
 
 export async function createFormation(req: Request, res: Response) {
-  const { titre, description, prix, dateDebut, dateFin, formateurId } = req.body;
+  console.log('=== NOUVELLE DEMANDE DE CRÉATION DE FORMATION ===');
+  console.log('Données reçues:', req.body);
+  
+  const { titre, description, prix, dateDebut, dateFin, statut } = req.body;
+  
+  // Validation des champs requis
+  if (!titre || !description || prix === undefined || !dateDebut || !dateFin) {
+    console.error('Champs manquants dans la requête');
+    return res.status(400).json({ 
+      message: "Tous les champs sont obligatoires",
+      errors: [
+        !titre && { path: 'titre', message: 'Le titre est requis' },
+        !description && { path: 'description', message: 'La description est requise' },
+        prix === undefined && { path: 'prix', message: 'Le prix est requis' },
+        !dateDebut && { path: 'dateDebut', message: 'La date de début est requise' },
+        !dateFin && { path: 'dateFin', message: 'La date de fin est requise' }
+      ].filter(Boolean)
+    });
+  }
+
   try {
+    console.log('Tentative de création de la formation...');
+    
+    // Vérifier si l'utilisateur est authentifié et a un ID valide
+    const userId = (req as any).user?.id; // Supposons que l'ID de l'utilisateur est dans req.user.id
+    if (!userId) {
+      console.error('Aucun ID utilisateur trouvé dans la requête');
+      return res.status(401).json({ message: "Non autorisé - Utilisateur non identifié" });
+    }
+
     const newFormation = await prisma.formation.create({
       data: {
         titre,
         description,
-        prix,
+        prix: Number(prix),
         dateDebut: new Date(dateDebut),
         dateFin: new Date(dateFin),
-        formateurId,
+        statut: statut || 'BROUILLON',
+        formateurId: userId // Utiliser l'ID de l'utilisateur connecté comme formateur
       },
     });
+    
+    console.log('Formation créée avec succès:', newFormation);
     res.status(201).json(newFormation);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Erreur lors de la création de la formation." });
+    
+  } catch (error: any) {
+    console.error('ERREUR lors de la création de la formation:', error);
+    console.error('Détails de l\'erreur:', error.message);
+    
+    // Gestion spécifique des erreurs Prisma
+    if (error.code === 'P2002') {
+      return res.status(400).json({ 
+        message: "Une formation avec ce titre existe déjà",
+        errors: [{ path: 'titre', message: 'Ce titre est déjà utilisé' }]
+      });
+    }
+    
+    res.status(500).json({ 
+      message: "Erreur lors de la création de la formation",
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 }
 

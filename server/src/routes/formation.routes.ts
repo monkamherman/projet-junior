@@ -6,13 +6,17 @@ import {
   updateFormation,
   deleteFormation,
 } from "../controllers/formations/formation";
+import { authMiddleware } from "../middlewares/auth.middleware";
 
 const router = Router();
 
+// Routes publiques
 router.get("/", getFormations);
 router.get("/:id", getFormationById);
-router.post("/", createFormation);
-router.put("/:id", updateFormation);
-router.delete("/:id", deleteFormation);
+
+// Routes protégées par authentification
+router.post("/", authMiddleware, createFormation);
+router.put("/:id", authMiddleware, updateFormation);
+router.delete("/:id", authMiddleware, deleteFormation);
 
 export default router;

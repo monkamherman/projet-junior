@@ -1,6 +1,11 @@
 import DynamicPageLoader from '@/components/ui/LazyCompoment';
 import { dashboardRoutes } from '@/features/dashboard/routes';
 import { ProfilePage } from '@/features/profile/pages/ProfilePage';
+import { 
+  PaiementPage, 
+  PaiementHistoryPage, 
+  PaymentConfirmationPage 
+} from '@/features/paiements';
 import UserLayout from '@/layouts/UserLayout';
 import ForgotPassword from '@/pages/auth/ForgotPassword';
 import Login from '@/pages/auth/Login';
@@ -43,6 +48,21 @@ const RouterInstance = createBrowserRouter([
       {
         path: 'a-propos',
         element: <APropos />,
+      },
+      // Route de paiement
+      {
+        path: 'formations/:id/paiement',
+        element: <PaiementPage />,
+      },
+      // Historique des paiements
+      {
+        path: 'mon-compte/paiements',
+        element: <PaiementHistoryPage />,
+      },
+      // Confirmation de paiement
+      {
+        path: 'paiement/confirmation',
+        element: <PaymentConfirmationPage />,
       },
       // Public catch-all -> 404
       { path: '*', element: <DynamicPageLoader pageKey="error/PageError" /> },
