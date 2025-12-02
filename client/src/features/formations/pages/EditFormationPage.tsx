@@ -17,7 +17,7 @@ export default function EditFormationPage() {
   const { data: formation, isLoading, error } = useQuery({
     queryKey: ['formation', id],
     queryFn: async () => {
-      const { data } = await api.get(`/api/formations/${id}`);
+      const { data } = await api.get(`/formations/${id}`);
       return data;
     },
     enabled: !!id,
@@ -25,7 +25,7 @@ export default function EditFormationPage() {
 
   const updateFormation = useMutation({
     mutationFn: async (data: FormationFormValues) => {
-      const response = await api.put(`/api/formations/${id}`, data);
+      const response = await api.put(`/formations/${id}`, data);
       return response.data;
     },
     onSuccess: () => {

@@ -21,7 +21,7 @@ export function useUserFormations() {
   return useQuery<Formation[]>({
     queryKey: ['user-formations'],
     queryFn: async () => {
-      const { data } = await api.get('/api/formations/mes-formations');
+      const { data } = await api.get('/formations/mes-formations');
       return data;
     },
   });
@@ -31,7 +31,7 @@ export function useGenerateAttestation(formationId: string) {
   return useQuery({
     queryKey: ['attestation', formationId],
     queryFn: async () => {
-      const response = await api.get(`/api/formations/${formationId}/attestation`, {
+      const response = await api.get(`/formations/${formationId}/attestation`, {
         responseType: 'blob',
       });
       
@@ -55,7 +55,7 @@ export function useUpdateFormation() {
   
   return useMutation({
     mutationFn: async ({ id, ...data }: { id: string } & Partial<Formation>) => {
-      const response = await api.put(`/api/formations/${id}`, data);
+      const response = await api.put(`/formations/${id}`, data);
       return response.data;
     },
     onSuccess: () => {
@@ -81,7 +81,7 @@ export function useDeleteFormation() {
   
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.delete(`/api/formations/${id}`);
+      const response = await api.delete(`/formations/${id}`);
       return response.data;
     },
     onSuccess: () => {

@@ -28,32 +28,25 @@ export default defineConfig({
     ],
   },
   
+  // Configuration du serveur de développement
   server: {
+    host: process.env.HOST || '0.0.0.0',
+    port: Number(process.env.PORT) || 3000,
     proxy: {
       '/api': {
         target: 'http://localhost:10000',
         changeOrigin: true,
-        secure: false
-      }
-    }
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api/, '')
+      },
+    },
   },
 
-  // ✅ NOUVEAU : Configuration build pour SPA
+  // Configuration de build pour la production
   build: {
     outDir: 'dist',
     rollupOptions: {
       input: './index.html',
-    },
-  },
-
-  server: {
-    host: process.env.HOST || '0.0.0.0',
-    port: Number(process.env.PORT) || 4000,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:10000',
-        changeOrigin: true,
-      },
     },
   },
 

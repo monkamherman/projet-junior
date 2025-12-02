@@ -1,11 +1,13 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios from 'axios';
 
-// Utilisation du proxy Vite en développement
-const isDev = import.meta.env.DEV;
-const API_URL = isDev ? '' : (import.meta.env.VITE_API_URL || 'http://localhost:10000');
+type ApiResponse<T = unknown> = Promise<T>;
+
+// Configuration de l'URL de base
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:10000';
 
 export const api: AxiosInstance = axios.create({
-  baseURL: isDev ? '/api' : `${API_URL}/api`,
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -40,17 +42,32 @@ api.interceptors.response.use(
 );
 
 // Fonctions utilitaires pour les appels API
-export const apiGet = <T>(url: string, config?: AxiosRequestConfig) => 
+export const apiGet = <T>(url: string, config?: AxiosRequestConfig): ApiResponse<T> => 
   api.get<T>(url, config).then((res) => res.data);
 
-export const apiPost = <T>(url: string, data?: any, config?: AxiosRequestConfig) =>
+export const apiPost = <T, D = unknown>(
+  url: string, 
+  data?: D, 
+  config?: AxiosRequestConfig
+): ApiResponse<T> =>
   api.post<T>(url, data, config).then((res) => res.data);
 
-export const apiPut = <T>(url: string, data?: any, config?: AxiosRequestConfig) =>
+export const apiPut = <T, D = unknown>(
+  url: string, 
+  data?: D, 
+  config?: AxiosRequestConfig
+): ApiResponse<T> =>
   api.put<T>(url, data, config).then((res) => res.data);
 
-export const apiDelete = <T>(url: string, config?: AxiosRequestConfig) =>
+export const apiDelete = <T = void>(
+  url: string, 
+  config?: AxiosRequestConfig
+): ApiResponse<T> =>
   api.delete<T>(url, config).then((res) => res.data);
 
-export const apiPatch = <T>(url: string, data?: any, config?: AxiosRequestConfig) =>
+export const apiPatch = <T, D = unknown>(
+  url: string, 
+  data?: D, 
+  config?: AxiosRequestConfig
+): ApiResponse<T> =>
   api.patch<T>(url, data, config).then((res) => res.data);
