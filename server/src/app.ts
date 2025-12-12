@@ -1,6 +1,7 @@
 // src/server.ts
 import compression from "compression";
 import cors from "cors";
+import "dotenv/config";
 import { logger } from "env-var";
 import express from "express";
 import cacheControl from "express-cache-controller";
@@ -43,6 +44,10 @@ const corsOptions: cors.CorsOptions = {
     const allowedOrigins = [
       "http://localhost:3000",
       "http://localhost:4000",
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "http://localhost:3001",
+      "http://localhost:3002",
       "https://projet-junior-client.onrender.com",
     ];
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {

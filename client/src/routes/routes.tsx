@@ -1,19 +1,20 @@
 import DynamicPageLoader from '@/components/ui/LazyCompoment';
+import { MesAttestationsPage } from '@/features/attestations/pages/MesAttestationsPage';
 import { dashboardRoutes } from '@/features/dashboard/routes';
-import { ProfilePage } from '@/features/profile/pages/ProfilePage';
-import { 
-  PaiementPage, 
-  PaiementHistoryPage, 
-  PaymentConfirmationPage 
+import {
+  PaiementHistoryPage,
+  PaiementPage,
+  PaymentConfirmationPage,
 } from '@/features/paiements';
+import { ProfilePage } from '@/features/profile/pages/ProfilePage';
 import UserLayout from '@/layouts/UserLayout';
+import APropos from '@/pages/APropos';
 import ForgotPassword from '@/pages/auth/ForgotPassword';
 import Login from '@/pages/auth/Login';
 import Register from '@/pages/auth/Register';
 import ResetPassword from '@/pages/auth/ResetPassword';
 import VerifyOTP from '@/pages/auth/VerifyOTP';
 import Home from '@/pages/home/Home';
-import APropos from '@/pages/APropos';
 import { createBrowserRouter } from 'react-router-dom';
 
 /**
@@ -63,6 +64,11 @@ const RouterInstance = createBrowserRouter([
       {
         path: 'paiement/confirmation',
         element: <PaymentConfirmationPage />,
+      },
+      // Mes attestations
+      {
+        path: 'mes-attestations',
+        element: <MesAttestationsPage />,
       },
       // Public catch-all -> 404
       { path: '*', element: <DynamicPageLoader pageKey="error/PageError" /> },

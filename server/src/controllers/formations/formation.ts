@@ -1,5 +1,5 @@
+import { Prisma, PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
-import { PrismaClient, Prisma } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -30,54 +30,64 @@ type FormationWithFormateur = Prisma.FormationGetPayload<{
   dateInscription: string;
 };
 
-export async function getFormations(req: Request, res: Response): Promise<void> {
+export async function getFormations(
+  req: Request,
+  res: Response
+): Promise<void> {
   try {
     const formations = await prisma.formation.findMany();
     res.json(formations);
   } catch (error: unknown) {
     console.error(error);
-    const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
-    res.status(500).json({ 
+    const errorMessage =
+      error instanceof Error ? error.message : "Erreur inconnue";
+    res.status(500).json({
       message: "Erreur lors de la récupération des formations.",
-      error: errorMessage
+      error: errorMessage,
     });
   }
 }
 
-export async function getFormationById(req: Request, res: Response): Promise<void> {
+export async function getFormationById(
+  req: Request,
+  res: Response
+): Promise<void> {
   const { id } = req.params;
   try {
-    const formation = await prisma.formation.findUnique({ 
+    const formation = await prisma.formation.findUnique({
       where: { id },
       include: {
         formateur: {
           select: {
             id: true,
             nom: true,
-            prenom: true
-          }
-        }
-      }
+            prenom: true,
+          },
+        },
+      },
     });
-    
+
     if (!formation) {
       res.status(404).json({ message: "Formation non trouvée." });
       return;
     }
-    
+
     res.json(formation);
   } catch (error: unknown) {
     console.error(error);
-    const errorMessage = error instanceof Error ? error.message : 'Erreur inconnue';
-    res.status(500).json({ 
+    const errorMessage =
+      error instanceof Error ? error.message : "Erreur inconnue";
+    res.status(500).json({
       message: "Erreur lors de la récupération de la formation.",
-      error: errorMessage
+      error: errorMessage,
     });
   }
 }
 
-
-export async function getUserFormations(req: AuthenticatedRequest, res: Response) {
+export async function getUserFormations(
+  req: AuthenticatedRequest,
+  res: Response
+) {
   try {
     if (!req.user) {
       return res.status(401).json({ message: "Non autorisé." });
@@ -86,7 +96,7 @@ export async function getUserFormations(req: AuthenticatedRequest, res: Response
     // Première requête pour obtenir les inscriptions de l'utilisateur
     const inscriptions = await prisma.inscription.findMany({
       where: {
-        utilisateurId: req.user.id
+        utilisateurId: req.user.id,
       },
       include: {
         formation: {
@@ -95,60 +105,73 @@ export async function getUserFormations(req: AuthenticatedRequest, res: Response
               select: {
                 id: true,
                 nom: true,
-                prenom: true
-              }
-            }
-          }
-        }
-      }
+                prenom: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     // Transformer les données pour correspondre au format attendu
-    const formations: FormationWithFormateur[] = inscriptions.map(inscription => ({
-      ...inscription.formation,
-      dateInscription: inscription.dateInscription.toISOString()
-    }));
+    const formations: FormationWithFormateur[] = inscriptions.map(
+      (inscription) => ({
+        ...inscription.formation,
+        dateInscription: inscription.dateInscription.toISOString(),
+      })
+    );
 
     res.json(formations);
   } catch (error: unknown) {
     console.error(error);
-    const errorMessage = error instanceof Error ? error.message : 'Une erreur inconnue est survenue';
-    res.status(500).json({ 
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "Une erreur inconnue est survenue";
+    res.status(500).json({
       message: "Erreur lors de la récupération de vos formations.",
-      error: errorMessage 
+      error: errorMessage,
     });
   }
 }
 
 export async function createFormation(req: Request, res: Response) {
-  console.log('=== NOUVELLE DEMANDE DE CRÉATION DE FORMATION ===');
-  console.log('Données reçues:', req.body);
-  
+  console.log("=== NOUVELLE DEMANDE DE CRÉATION DE FORMATION ===");
+  console.log("Données reçues:", req.body);
+
   const { titre, description, prix, dateDebut, dateFin, statut } = req.body;
-  
+
   // Validation des champs requis
   if (!titre || !description || prix === undefined || !dateDebut || !dateFin) {
-    console.error('Champs manquants dans la requête');
-    return res.status(400).json({ 
+    console.error("Champs manquants dans la requête");
+    return res.status(400).json({
       message: "Tous les champs sont obligatoires",
       errors: [
-        !titre && { path: 'titre', message: 'Le titre est requis' },
-        !description && { path: 'description', message: 'La description est requise' },
-        prix === undefined && { path: 'prix', message: 'Le prix est requis' },
-        !dateDebut && { path: 'dateDebut', message: 'La date de début est requise' },
-        !dateFin && { path: 'dateFin', message: 'La date de fin est requise' }
-      ].filter(Boolean)
+        !titre && { path: "titre", message: "Le titre est requis" },
+        !description && {
+          path: "description",
+          message: "La description est requise",
+        },
+        prix === undefined && { path: "prix", message: "Le prix est requis" },
+        !dateDebut && {
+          path: "dateDebut",
+          message: "La date de début est requise",
+        },
+        !dateFin && { path: "dateFin", message: "La date de fin est requise" },
+      ].filter(Boolean),
     });
   }
 
   try {
-    console.log('Tentative de création de la formation...');
-    
+    console.log("Tentative de création de la formation...");
+
     // Vérifier si l'utilisateur est authentifié et a un ID valide
     const userId = (req as AuthenticatedRequest).user?.id;
     if (!userId) {
-      console.error('Aucun ID utilisateur trouvé dans la requête');
-      return res.status(401).json({ message: "Non autorisé - Utilisateur non identifié" });
+      console.error("Aucun ID utilisateur trouvé dans la requête");
+      return res
+        .status(401)
+        .json({ message: "Non autorisé - Utilisateur non identifié" });
     }
 
     const newFormation = await prisma.formation.create({
@@ -158,36 +181,36 @@ export async function createFormation(req: Request, res: Response) {
         prix: Number(prix),
         dateDebut: new Date(dateDebut),
         dateFin: new Date(dateFin),
-        statut: statut || 'BROUILLON',
-        formateurId: userId // Utiliser l'ID de l'utilisateur connecté comme formateur
+        statut: statut || "BROUILLON",
+        formateurId: userId, // Utiliser l'ID de l'utilisateur connecté comme formateur
       },
     });
-    
-    console.log('Formation créée avec succès:', newFormation);
+
+    console.log("Formation créée avec succès:", newFormation);
     res.status(201).json(newFormation);
-    
   } catch (error: unknown) {
-    console.error('ERREUR lors de la création de la formation:', error);
-    console.error('Détails de l\'erreur:', error.message);
-    
+    console.error("ERREUR lors de la création de la formation:", error);
+    console.error("Détails de l'erreur:", error.message);
+
     // Gestion spécifique des erreurs Prisma
-    if (error instanceof Error && 'code' in error && error.code === 'P2002') {
-      return res.status(400).json({ 
+    if (error instanceof Error && "code" in error && error.code === "P2002") {
+      return res.status(400).json({
         message: "Une formation avec ce titre existe déjà",
-        errors: [{ path: 'titre', message: 'Ce titre est déjà utilisé' }]
+        errors: [{ path: "titre", message: "Ce titre est déjà utilisé" }],
       });
     }
-    
-    res.status(500).json({ 
+
+    res.status(500).json({
       message: "Erreur lors de la création de la formation",
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 }
 
 export async function updateFormation(req: Request, res: Response) {
   const { id } = req.params;
-  const { titre, description, prix, dateDebut, dateFin, formateurId } = req.body;
+  const { titre, description, prix, dateDebut, dateFin, formateurId } =
+    req.body;
   try {
     const formation = await prisma.formation.findUnique({ where: { id } });
     if (!formation) {
@@ -207,7 +230,9 @@ export async function updateFormation(req: Request, res: Response) {
     res.json(updatedFormation);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Erreur lors de la mise à jour de la formation." });
+    res
+      .status(500)
+      .json({ message: "Erreur lors de la mise à jour de la formation." });
   }
 }
 
@@ -222,6 +247,8 @@ export async function deleteFormation(req: Request, res: Response) {
     res.json({ message: "Formation supprimée avec succès." });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Erreur lors de la suppression de la formation." });
+    res
+      .status(500)
+      .json({ message: "Erreur lors de la suppression de la formation." });
   }
 }

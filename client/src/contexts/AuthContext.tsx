@@ -1,11 +1,12 @@
 import { authApi } from '@/api';
+import { useToast } from '@/hooks/use-toast';
 import type { ReactNode } from 'react';
 import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
+    createContext,
+    useCallback,
+    useContext,
+    useEffect,
+    useState,
 } from 'react';
 
 export type User = {
@@ -29,6 +30,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const { toast } = useToast();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -52,6 +54,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.removeItem('token');
       localStorage.removeItem('refresh_token');
       setUser(null);
+
+      toast({
+        title: "Déconnexion",
+        description: "Vous avez été déconnecté avec succès.",
+      });
       
       // Redirection vers la page de connexion
       if (!window.location.pathname.startsWith('/login')) {
@@ -65,15 +72,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const checkAuth = useCallback(async () => {
     try {
       setIsLoading(true);
-      const token = localStorage.getItem('token');
+      const refreshToken = localStorage.getItem('refresh_token');
 
-      if (!token) {
+      if (!refreshToken) {
         setUser(null);
         return;
       }
 
       // Vérifier si le token est valide
-      const response = await authApi.refreshToken({ refresh: token });
+      const response = await authApi.refreshToken({ refresh: refreshToken });
 
       if (response.data) {
         const { access, user: userData } = response.data;
@@ -114,23 +121,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Mise à jour de l'état utilisateur
       setUser(userData);
 
+      toast({
+        title: "Connexion réussie",
+        description: `Bienvenue, ${userData.prenom} ${userData.nom}`,
+      });
+
       // Redirection vers la page d'accueil
       window.location.href = '/';
     } catch (error: any) {
+      let errorMessage = 'Une erreur est survenue lors de la connexion';
       // Gestion des erreurs spécifiques
       if (error.response?.status === 401) {
-        throw new Error('Identifiants incorrects');
+        errorMessage = 'Identifiants incorrects';
       } else if (error.response?.status === 0) {
-        throw new Error(
-          'Impossible de se connecter au serveur. Vérifiez votre connexion internet.'
-        );
+        errorMessage = 'Impossible de se connecter au serveur. Vérifiez votre connexion internet.';
       } else {
         console.error('Erreur de connexion:', error);
-        throw new Error(
-          error.response?.data?.message ||
-            'Une erreur est survenue lors de la connexion'
-        );
+        errorMessage = error.response?.data?.message || errorMessage;
       }
+      
+      toast({
+        variant: "destructive",
+        title: "Erreur de connexion",
+        description: errorMessage,
+      });
+
+      throw new Error(errorMessage);
     } finally {
       setIsLoggingIn(false);
     }

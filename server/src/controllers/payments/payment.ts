@@ -1,5 +1,5 @@
-import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
+import { Request, Response } from "express";
 
 const prisma = new PrismaClient();
 
@@ -8,7 +8,9 @@ export async function createPayment(req: Request, res: Response) {
 
   try {
     // Vérifier que l'inscription existe
-    const inscription = await prisma.inscription.findUnique({ where: { id: inscriptionId } });
+    const inscription = await prisma.inscription.findUnique({
+      where: { id: inscriptionId },
+    });
     if (!inscription) {
       return res.status(404).json({ message: "Inscription non trouvée." });
     }
@@ -38,7 +40,9 @@ export async function createPayment(req: Request, res: Response) {
     res.status(201).json(payment);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Erreur lors de la création du paiement." });
+    res
+      .status(500)
+      .json({ message: "Erreur lors de la création du paiement." });
   }
 }
 
@@ -48,7 +52,9 @@ export async function getPayments(req: Request, res: Response) {
     res.json(payments);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Erreur lors de la récupération des paiements." });
+    res
+      .status(500)
+      .json({ message: "Erreur lors de la récupération des paiements." });
   }
 }
 
@@ -62,7 +68,9 @@ export async function getPaymentById(req: Request, res: Response) {
     res.json(payment);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Erreur lors de la récupération du paiement." });
+    res
+      .status(500)
+      .json({ message: "Erreur lors de la récupération du paiement." });
   }
 }
 
@@ -87,7 +95,9 @@ export async function updatePayment(req: Request, res: Response) {
     res.json(updatedPayment);
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Erreur lors de la mise à jour du paiement." });
+    res
+      .status(500)
+      .json({ message: "Erreur lors de la mise à jour du paiement." });
   }
 }
 
@@ -102,6 +112,8 @@ export async function deletePayment(req: Request, res: Response) {
     res.json({ message: "Paiement supprimé avec succès." });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Erreur lors de la suppression du paiement." });
+    res
+      .status(500)
+      .json({ message: "Erreur lors de la suppression du paiement." });
   }
 }

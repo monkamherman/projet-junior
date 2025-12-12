@@ -1,12 +1,13 @@
-import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
+import { Request, Response } from "express";
 
 const prisma = new PrismaClient();
 
 // Créer une nouvelle formation
 export const createFormation = async (req: Request, res: Response) => {
-  const { titre, description, prix, dateDebut, dateFin, formateurId } = req.body;
-  
+  const { titre, description, prix, dateDebut, dateFin, formateurId } =
+    req.body;
+
   try {
     const formation = await prisma.formation.create({
       data: {
@@ -18,10 +19,12 @@ export const createFormation = async (req: Request, res: Response) => {
         formateur: formateurId ? { connect: { id: formateurId } } : undefined,
       },
     });
-    
+
     res.status(201).json(formation);
   } catch (error) {
-    res.status(500).json({ error: 'Erreur lors de la création de la formation' });
+    res
+      .status(500)
+      .json({ error: "Erreur lors de la création de la formation" });
   }
 };
 
@@ -35,30 +38,32 @@ export const getAllFormations = async (req: Request, res: Response) => {
             id: true,
             nom: true,
             prenom: true,
-            email: true
-          }
+            email: true,
+          },
         },
         _count: {
           select: {
-            inscriptions: true
-          }
-        }
+            inscriptions: true,
+          },
+        },
       },
       orderBy: {
-        dateDebut: 'desc'
-      }
+        dateDebut: "desc",
+      },
     });
-    
+
     res.json(formations);
   } catch (error) {
-    res.status(500).json({ error: 'Erreur lors de la récupération des formations' });
+    res
+      .status(500)
+      .json({ error: "Erreur lors de la récupération des formations" });
   }
 };
 
 // Obtenir une formation par ID
 export const getFormationById = async (req: Request, res: Response) => {
   const { id } = req.params;
-  
+
   try {
     const formation = await prisma.formation.findUnique({
       where: { id },
@@ -68,8 +73,8 @@ export const getFormationById = async (req: Request, res: Response) => {
             id: true,
             nom: true,
             prenom: true,
-            email: true
-          }
+            email: true,
+          },
         },
         inscriptions: {
           include: {
@@ -78,30 +83,32 @@ export const getFormationById = async (req: Request, res: Response) => {
                 id: true,
                 nom: true,
                 prenom: true,
-                email: true
-              }
+                email: true,
+              },
             },
-            statut: true
-          }
-        }
-      }
+          },
+        },
+      },
     });
-    
+
     if (!formation) {
-      return res.status(404).json({ error: 'Formation non trouvée' });
+      return res.status(404).json({ error: "Formation non trouvée" });
     }
-    
+
     res.json(formation);
   } catch (error) {
-    res.status(500).json({ error: 'Erreur lors de la récupération de la formation' });
+    res
+      .status(500)
+      .json({ error: "Erreur lors de la récupération de la formation" });
   }
 };
 
 // Mettre à jour une formation
 export const updateFormation = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { titre, description, prix, dateDebut, dateFin, statut, formateurId } = req.body;
-  
+  const { titre, description, prix, dateDebut, dateFin, statut, formateurId } =
+    req.body;
+
   try {
     const updatedFormation = await prisma.formation.update({
       where: { id },
@@ -115,24 +122,28 @@ export const updateFormation = async (req: Request, res: Response) => {
         formateur: formateurId ? { connect: { id: formateurId } } : undefined,
       },
     });
-    
+
     res.json(updatedFormation);
   } catch (error) {
-    res.status(500).json({ error: 'Erreur lors de la mise à jour de la formation' });
+    res
+      .status(500)
+      .json({ error: "Erreur lors de la mise à jour de la formation" });
   }
 };
 
 // Supprimer une formation
 export const deleteFormation = async (req: Request, res: Response) => {
   const { id } = req.params;
-  
+
   try {
     await prisma.formation.delete({
-      where: { id }
+      where: { id },
     });
-    
-    res.json({ message: 'Formation supprimée avec succès' });
+
+    res.json({ message: "Formation supprimée avec succès" });
   } catch (error) {
-    res.status(500).json({ error: 'Erreur lors de la suppression de la formation' });
+    res
+      .status(500)
+      .json({ error: "Erreur lors de la suppression de la formation" });
   }
 };

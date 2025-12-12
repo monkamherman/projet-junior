@@ -35,11 +35,11 @@ enum ModePaiement {
 }
 
 enum StatutPaiement {
-  EN_ATTENTE  // En attente de confirmation
-  EN_COURS    // Paiement en cours de traitement
-  VALIDE      // Paiement validé
-  ANNULE      // Paiement annulé
-  ECHEC       // Échec du paiement
+  EN_ATTENTE // En attente de confirmation
+  EN_COURS // Paiement en cours de traitement
+  VALIDE // Paiement validé
+  ANNULE // Paiement annulé
+  ECHEC // Échec du paiement
 }
 
 enum StatutAttestation {
@@ -82,6 +82,7 @@ model Formation {
   formateurId  String?       @db.ObjectId
   inscriptions Inscription[]
   attestations Attestation[]
+  paiements    Paiement[]
 
   @@map("formations")
 }
@@ -96,7 +97,8 @@ model Inscription {
   utilisateurId String       @db.ObjectId
   formation     Formation    @relation(fields: [formationId], references: [id])
   formationId   String       @db.ObjectId
-  paiement      Paiement?    @relation("PaiementInscription")
+  paiement      Paiement?    @relation(fields: [paiementId], references: [id])
+  paiementId    String?      @db.ObjectId
   attestation   Attestation? @relation("AttestationInscription")
 
   @@map("inscriptions")
@@ -109,18 +111,17 @@ model Paiement {
   mode         ModePaiement
   statut       StatutPaiement @default(EN_ATTENTE)
   datePaiement DateTime       @default(now())
-  telephone    String         // Numéro de téléphone de l'utilisateur
-  operateur    String?        // Opérateur (MTN, Orange, etc.)
-  code         String?        // Code de transaction
-  commentaire  String?        // Commentaire supplémentaire
+  telephone    String // Numéro de téléphone de l'utilisateur
+  operateur    String? // Opérateur (MTN, Orange, etc.)
+  code         String? // Code de transaction
+  commentaire  String? // Commentaire supplémentaire
 
   // Relations
-  utilisateur   Utilisateur @relation(fields: [utilisateurId], references: [id])
-  utilisateurId String      @db.ObjectId
-  formation     Formation   @relation(fields: [formationId], references: [id])
-  formationId   String      @db.ObjectId
-  inscription   Inscription? @relation("PaiementInscription", fields: [inscriptionId], references: [id])
-  inscriptionId String?     @db.ObjectId
+  utilisateur   Utilisateur   @relation(fields: [utilisateurId], references: [id])
+  utilisateurId String        @db.ObjectId
+  formation     Formation     @relation(fields: [formationId], references: [id])
+  formationId   String        @db.ObjectId
+  inscriptions  Inscription[]
 
   @@map("paiements")
 }

@@ -3,6 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.app = void 0;
 // src/server.ts
 const compression_1 = __importDefault(require("compression"));
 const cors_1 = __importDefault(require("cors"));
@@ -36,7 +37,7 @@ const morganStream = {
         (0, env_var_1.logger)("http", message.trim());
     },
 };
-const app = (0, express_1.default)();
+exports.app = (0, express_1.default)();
 // Configuration CORS simplifiée pour le développement
 const corsOptions = {
     origin: (origin, callback) => {
@@ -63,18 +64,18 @@ const corsOptions = {
     optionsSuccessStatus: 200,
 };
 // Middlewares critiques en premier
-app.use((0, cors_1.default)(corsOptions));
-app.use(express_1.default.json());
-app.use(express_1.default.urlencoded({ extended: true }));
+exports.app.use((0, cors_1.default)(corsOptions));
+exports.app.use(express_1.default.json());
+exports.app.use(express_1.default.urlencoded({ extended: true }));
 // Configuration Helmet simplifiée pour le développement
-app.use((0, helmet_1.default)({
+exports.app.use((0, helmet_1.default)({
     contentSecurityPolicy: false,
     crossOriginResourcePolicy: { policy: "cross-origin" },
     crossOriginEmbedderPolicy: false,
     crossOriginOpenerPolicy: false,
 }));
 // Rate limiting (après les routes critiques)
-app.use(async (req, res, next) => {
+exports.app.use(async (req, res, next) => {
     if (!redisReady)
         return next();
     const ip = req.ip;
@@ -92,14 +93,14 @@ app.use(async (req, res, next) => {
     next();
 });
 // Middleware de compression
-app.use((0, compression_1.default)());
+exports.app.use((0, compression_1.default)());
 // Middleware de contrôle du cache
-app.use((0, express_cache_controller_1.default)({ maxAge: 86400 }));
+exports.app.use((0, express_cache_controller_1.default)({ maxAge: 86400 }));
 // Logging
-app.use((0, morgan_1.default)("combined", { stream: morganStream }));
-app.use(express_1.default.static("public"));
+exports.app.use((0, morgan_1.default)("combined", { stream: morganStream }));
+exports.app.use(express_1.default.static("public"));
 // Health check
-app.get("/health", (req, res) => {
+exports.app.get("/health", (req, res) => {
     res.status(200).json({
         status: "healthy",
         timestamp: new Date().toISOString(),
@@ -107,11 +108,11 @@ app.get("/health", (req, res) => {
         version: "1.0.0",
     });
 });
-app.get("/keep-alive", (req, res) => res.send("OK"));
+exports.app.get("/keep-alive", (req, res) => res.send("OK"));
 // Enregistrer les routes applicatives après les middlewares
-(0, routes_1.default)(app);
+(0, routes_1.default)(exports.app);
 // Route racine modifiée
-app.get("/api", (req, res) => {
+exports.app.get("/api", (req, res) => {
     res.status(200).json({
         status: "online",
         uptime: process.uptime(),
@@ -119,7 +120,7 @@ app.get("/api", (req, res) => {
     });
 });
 // Gestion des erreurs CORS
-app.use((err, req, res, next) => {
+exports.app.use((err, req, res, next) => {
     if (err.message.includes("CORS")) {
         res.status(403).json({ error: err.message });
     }
@@ -128,7 +129,7 @@ app.use((err, req, res, next) => {
     }
 });
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 10000;
-app
+exports.app
     .listen(PORT, "0.0.0.0", () => {
     console.log(`🚀 Serveur démarré sur le port ${PORT}`);
 })

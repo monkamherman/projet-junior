@@ -1,6 +1,6 @@
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
+import { NextFunction, Request, Response } from "express";
+import jwt from "jsonwebtoken";
 
 const prisma = new PrismaClient();
 
@@ -15,7 +15,7 @@ export interface AuthenticatedUser {
 }
 
 // Extension de l'interface Request pour inclure la propriété user
-declare module 'express-serve-static-core' {
+declare module "express-serve-static-core" {
   interface Request {
     user?: AuthenticatedUser;
   }
@@ -25,45 +25,57 @@ declare module 'express-serve-static-core' {
  * Middleware d'authentification
  * Vérifie la présence et la validité du token JWT
  */
-export const authMiddleware = async (req: Request, res: Response, next: NextFunction) => {
+export const authMiddleware = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   try {
     // Récupérer le token depuis l'en-tête Authorization
     const authHeader = req.headers.authorization;
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ message: 'Token d\'authentification manquant ou invalide' });
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res
+        .status(401)
+        .json({ message: "Token d'authentification manquant ou invalide" });
     }
-    
-    const token = authHeader.split(' ')[1];
-    
+
+    const token = authHeader.split(" ")[1];
+
     // Vérifier que la clé secrète est définie
     if (!process.env.JWT_SECRET) {
-      console.error('JWT_SECRET is not defined in environment variables');
-      return res.status(500).json({ message: 'Erreur de configuration du serveur' });
+      console.error("JWT_SECRET is not defined in environment variables");
+      return res
+        .status(500)
+        .json({ message: "Erreur de configuration du serveur" });
     }
 
     // Vérifier et décoder le token
-    console.log('Tentative de vérification du token JWT...');
-    console.log('Token reçu:', token.substring(0, 20) + '...');
-    console.log('JWT_SECRET défini:', process.env.JWT_SECRET ? 'Oui' : 'Non');
-    
+    console.log("Tentative de vérification du token JWT...");
+    console.log("Token reçu:", token.substring(0, 20) + "...");
+    console.log("JWT_SECRET défini:", process.env.JWT_SECRET ? "Oui" : "Non");
+
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET) as { userId: string };
-      console.log('Token décodé avec succès, userId:', decoded.userId);
+      console.log("Token décodé avec succès, userId:", decoded.userId);
     } catch (error) {
-      console.error('Erreur lors de la vérification du token:', error);
+      console.error("Erreur lors de la vérification du token:", error);
       if (error instanceof jwt.TokenExpiredError) {
-        return res.status(401).json({ message: 'Session expirée, veuillez vous reconnecter' });
+        return res
+          .status(401)
+          .json({ message: "Session expirée, veuillez vous reconnecter" });
       }
       if (error instanceof jwt.JsonWebTokenError) {
-        return res.status(401).json({ message: 'Token invalide' });
+        return res.status(401).json({ message: "Token invalide" });
       }
-      return res.status(500).json({ message: 'Erreur de vérification du token' });
+      return res
+        .status(500)
+        .json({ message: "Erreur de vérification du token" });
     }
-    
+
     // Récupérer l'utilisateur depuis la base de données
-    console.log('Récupération de l\'utilisateur avec ID:', decoded.userId);
+    console.log("Récupération de l'utilisateur avec ID:", decoded.userId);
     const user = await prisma.utilisateur.findUnique({
       where: { id: decoded.userId },
       select: {
@@ -75,30 +87,35 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
         telephone: true,
       },
     });
-    
+
     if (!user) {
-      return res.status(401).json({ message: 'Utilisateur non trouvé' });
+      return res.status(401).json({ message: "Utilisateur non trouvé" });
     }
-    
+
     // Ajouter l'utilisateur à l'objet request
     req.user = user;
-    
+
     // Passer au middleware ou au contrôleur suivant
     next();
   } catch (error) {
-    console.error('Erreur d\'authentification:', error);
-    
+    console.error("Erreur d'authentification:", error);
+
     if (error instanceof jwt.TokenExpiredError) {
-      return res.status(401).json({ message: 'Session expirée, veuillez vous reconnecter' });
+      return res
+        .status(401)
+        .json({ message: "Session expirée, veuillez vous reconnecter" });
     }
-    
+
     if (error instanceof jwt.JsonWebTokenError) {
-      return res.status(401).json({ message: 'Token invalide' });
+      return res.status(401).json({ message: "Token invalide" });
     }
-    
-    res.status(500).json({ message: 'Erreur d\'authentification' });
+
+    res.status(500).json({ message: "Erreur d'authentification" });
   }
 };
+
+// Export par défaut pour compatibilité
+export default authMiddleware;
 
 /**
  * Middleware pour vérifier les rôles
@@ -107,15 +124,16 @@ export const authMiddleware = async (req: Request, res: Response, next: NextFunc
 export const checkRole = (roles: string[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
     if (!req.user) {
-      return res.status(401).json({ message: 'Non authentifié' });
+      return res.status(401).json({ message: "Non authentifié" });
     }
-    
+
     if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ 
-        message: 'Vous n\'avez pas les droits nécessaires pour accéder à cette ressource' 
+      return res.status(403).json({
+        message:
+          "Vous n'avez pas les droits nécessaires pour accéder à cette ressource",
       });
     }
-    
+
     next();
   };
 };

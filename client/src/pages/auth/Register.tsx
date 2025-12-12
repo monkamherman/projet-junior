@@ -12,6 +12,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
+import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router-dom';
@@ -151,29 +152,21 @@ const Register = () => {
           throw new Error(response.data.message || "Échec de la création du compte");
         }
       }
-    } catch (err: unknown) {
+    } catch (error: unknown) {
       let errorMessage = 'Une erreur est survenue';
       
-      if (err && typeof err === 'object') {
-        const error = err as {
-          response?: {
-            data?: {
-              message?: string;
-              code?: string;
-            };
-          };
-          message?: string;
-        };
-        
-        errorMessage = error.response?.data?.message || error.message || 'Une erreur est survenue';
+      if (axios.isAxiosError(error) && error.response) {
+        errorMessage = error.response.data?.message || error.message;
         
         // Si l'erreur concerne l'OTP, on réinitialise le formulaire
-        if (error.response?.data?.code === 'INVALID_OTP') {
+        if (error.response.data?.code === 'INVALID_OTP') {
           setOtpSent(false);
         }
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
       }
       
-      console.error('Erreur lors de l\'inscription:', err);
+      console.error('Erreur lors de l\'inscription:', error);
       
       toast({
         variant: 'destructive',
@@ -186,8 +179,8 @@ const Register = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-6">
+    <div className="flex min-h-screen items-center justify-center p-4 bg-black">
+      <div className="w-full max-w-md space-y-6 bg-white p-8 rounded-xl shadow-2xl">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Créer un compte</h1>
           <p className="text-muted-foreground">

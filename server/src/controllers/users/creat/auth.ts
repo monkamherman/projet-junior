@@ -1,71 +1,79 @@
-import { Request, Response } from "express";
-import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
 import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcrypt";
+import { Request, Response } from "express";
+import jwt from "jsonwebtoken";
 
 const prisma = new PrismaClient();
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET is not defined in environment variables');
+  throw new Error("JWT_SECRET is not defined in environment variables");
 }
 
 export async function login(req: Request, res: Response) {
-  console.log('Tentative de connexion avec:', { email: req.body.email });
+  console.log("Tentative de connexion avec:", { email: req.body.email });
   const { email, motDePasse } = req.body;
 
   if (!email || !motDePasse) {
-    console.error('Email ou mot de passe manquant');
-    return res.status(400).json({ message: 'Email et mot de passe sont requis' });
+    console.error("Email ou mot de passe manquant");
+    return res
+      .status(400)
+      .json({ message: "Email et mot de passe sont requis" });
   }
 
   try {
-    console.log('Recherche de l\'utilisateur dans la base de données...');
+    console.log("Recherche de l'utilisateur dans la base de données...");
     const user = await prisma.utilisateur.findUnique({ where: { email } });
-    
+
     if (!user) {
-      console.error('Utilisateur non trouvé pour l\'email:', email);
-      return res.status(401).json({ message: 'Email ou mot de passe incorrect.' });
+      console.error("Utilisateur non trouvé pour l'email:", email);
+      return res
+        .status(401)
+        .json({ message: "Email ou mot de passe incorrect." });
     }
 
-    console.log('Utilisateur trouvé, vérification du mot de passe...');
+    console.log("Utilisateur trouvé, vérification du mot de passe...");
     const validPassword = await bcrypt.compare(motDePasse, user.motDePasse);
-    
+
     if (!validPassword) {
-      console.error('Mot de passe incorrect pour l\'utilisateur:', email);
-      return res.status(401).json({ message: 'Email ou mot de passe incorrect.' });
+      console.error("Mot de passe incorrect pour l'utilisateur:", email);
+      return res
+        .status(401)
+        .json({ message: "Email ou mot de passe incorrect." });
     }
 
-    console.log('Création des tokens JWT...');
+    console.log("Création des tokens JWT...");
     if (!process.env.JWT_SECRET) {
-      console.error('JWT_SECRET non défini');
-      throw new Error('JWT_SECRET is not defined');
+      console.error("JWT_SECRET non défini");
+      throw new Error("JWT_SECRET is not defined");
     }
-    
+
     if (!process.env.JWT_REFRESH_SECRET) {
-      console.error('JWT_REFRESH_SECRET non défini');
-      throw new Error('JWT_REFRESH_SECRET is not defined');
+      console.error("JWT_REFRESH_SECRET non défini");
+      throw new Error("JWT_REFRESH_SECRET is not defined");
     }
 
     if (!process.env.JWT_SECRET) {
-      throw new Error('JWT_SECRET is not defined in environment variables');
+      throw new Error("JWT_SECRET is not defined in environment variables");
     }
-    
+
     const accessToken = jwt.sign(
       { userId: user.id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: '1h' } as const
+      { expiresIn: "1h" } as const
     ) as string;
-    
+
     // Créer un refresh token
     if (!process.env.JWT_REFRESH_SECRET) {
-      throw new Error('JWT_REFRESH_SECRET is not defined in environment variables');
+      throw new Error(
+        "JWT_REFRESH_SECRET is not defined in environment variables"
+      );
     }
-    
+
     const refreshToken = jwt.sign(
       { userId: user.id },
       process.env.JWT_REFRESH_SECRET,
-      { expiresIn: '7d' } as const
+      { expiresIn: "7d" } as const
     ) as string;
 
     // Retourner les tokens et les informations utilisateur
@@ -94,13 +102,17 @@ export async function refreshToken(req: Request, res: Response) {
   }
 
   if (!process.env.JWT_REFRESH_SECRET) {
-    console.error('JWT_REFRESH_SECRET non défini');
-    return res.status(500).json({ message: "Erreur de configuration du serveur." });
+    console.error("JWT_REFRESH_SECRET non défini");
+    return res
+      .status(500)
+      .json({ message: "Erreur de configuration du serveur." });
   }
 
   try {
-    const decoded = jwt.verify(refresh, process.env.JWT_REFRESH_SECRET) as { userId: string };
-    
+    const decoded = jwt.verify(refresh, process.env.JWT_REFRESH_SECRET) as {
+      userId: string;
+    };
+
     const user = await prisma.utilisateur.findUnique({
       where: { id: decoded.userId },
       select: {
@@ -117,14 +129,16 @@ export async function refreshToken(req: Request, res: Response) {
     }
 
     if (!process.env.JWT_SECRET) {
-      console.error('JWT_SECRET non défini');
-      return res.status(500).json({ message: "Erreur de configuration du serveur." });
+      console.error("JWT_SECRET non défini");
+      return res
+        .status(500)
+        .json({ message: "Erreur de configuration du serveur." });
     }
 
     const newAccessToken = jwt.sign(
       { userId: user.id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: '1h' } as const
+      { expiresIn: "1h" } as const
     ) as string;
 
     res.json({
@@ -133,7 +147,9 @@ export async function refreshToken(req: Request, res: Response) {
     });
   } catch (error) {
     console.error("Erreur de rafraîchissement du token:", error);
-    return res.status(403).json({ message: "Token de rafraîchissement invalide ou expiré." });
+    return res
+      .status(403)
+      .json({ message: "Token de rafraîchissement invalide ou expiré." });
   }
 }
 

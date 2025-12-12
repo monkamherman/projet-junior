@@ -3,7 +3,7 @@ import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import axios from 'axios';
 
 // Configuration de base
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:10000';
+const BASE_URL = import.meta.env.VITE_API_URL || '';
 
 console.log('Configuration de l\'API - URL de base:', BASE_URL, '(Mode:', import.meta.env.MODE + ')');
 
@@ -44,7 +44,8 @@ axiosInstance.interceptors.response.use(
     if (
       error.response?.status === 401 &&
       originalRequest &&
-      !originalRequest._retry
+      !originalRequest._retry &&
+      !originalRequest.url?.includes('/login')
     ) {
       originalRequest._retry = true;
 

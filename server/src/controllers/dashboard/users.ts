@@ -1,5 +1,5 @@
-import { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
+import { Request, Response } from "express";
 
 const prisma = new PrismaClient();
 
@@ -14,12 +14,14 @@ export const getAllUsers = async (req: Request, res: Response) => {
         email: true,
         telephone: true,
         role: true,
-        createdAt: true
-      }
+        createdAt: true,
+      },
     });
     res.json(users);
   } catch (error) {
-    res.status(500).json({ error: 'Erreur lors de la récupération des utilisateurs' });
+    res
+      .status(500)
+      .json({ error: "Erreur lors de la récupération des utilisateurs" });
   }
 };
 
@@ -33,20 +35,22 @@ export const getUserById = async (req: Request, res: Response) => {
         inscriptions: {
           include: {
             formation: true,
-            attestation: true
-          }
+            attestation: true,
+          },
         },
-        paiements: true
-      }
+        paiements: true,
+      },
     });
-    
+
     if (!user) {
-      return res.status(404).json({ error: 'Utilisateur non trouvé' });
+      return res.status(404).json({ error: "Utilisateur non trouvé" });
     }
-    
+
     res.json(user);
   } catch (error) {
-    res.status(500).json({ error: 'Erreur lors de la récupération de l\'utilisateur' });
+    res
+      .status(500)
+      .json({ error: "Erreur lors de la récupération de l'utilisateur" });
   }
 };
 
@@ -54,7 +58,7 @@ export const getUserById = async (req: Request, res: Response) => {
 export const updateUser = async (req: Request, res: Response) => {
   const { id } = req.params;
   const { nom, prenom, email, telephone, role } = req.body;
-  
+
   try {
     const updatedUser = await prisma.utilisateur.update({
       where: { id },
@@ -63,27 +67,31 @@ export const updateUser = async (req: Request, res: Response) => {
         prenom,
         email,
         telephone,
-        role
-      }
+        role,
+      },
     });
-    
+
     res.json(updatedUser);
   } catch (error) {
-    res.status(500).json({ error: 'Erreur lors de la mise à jour de l\'utilisateur' });
+    res
+      .status(500)
+      .json({ error: "Erreur lors de la mise à jour de l'utilisateur" });
   }
 };
 
 // Désactiver un utilisateur
 export const deactivateUser = async (req: Request, res: Response) => {
   const { id } = req.params;
-  
+
   try {
     await prisma.utilisateur.delete({
-      where: { id }
+      where: { id },
     });
-    
-    res.json({ message: 'Utilisateur désactivé avec succès' });
+
+    res.json({ message: "Utilisateur désactivé avec succès" });
   } catch (error) {
-    res.status(500).json({ error: 'Erreur lors de la désactivation de l\'utilisateur' });
+    res
+      .status(500)
+      .json({ error: "Erreur lors de la désactivation de l'utilisateur" });
   }
 };

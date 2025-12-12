@@ -3,6 +3,7 @@ import bcrypt from "bcrypt";
 import { Request, Response } from "express";
 import { z } from "zod";
 import sendMail from "../../../nodemailer/sendmail";
+const prisma = new PrismaClient();
 
 // Fonction pour valider la force du mot de passe
 const validatePassword = (
@@ -113,8 +114,6 @@ const sendOtpSchema = z.object({
     }),
 });
 
-const prisma = new PrismaClient();
-
 // Fonction pour générer un OTP à 6 chiffres
 function generateOTP(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -186,7 +185,8 @@ export async function signup(req: Request, res: Response) {
       console.log(`OTP invalide ou expiré pour l'email: ${email}`);
       return res.status(400).json({
         success: false,
-        message: "Code de vérification invalide ou expiré. Veuillez demander un nouveau code.",
+        message:
+          "Code de vérification invalide ou expiré. Veuillez demander un nouveau code.",
         code: "INVALID_OTP",
       });
     }
@@ -240,11 +240,18 @@ export async function signup(req: Request, res: Response) {
 
 export async function verifyOTP(req: Request, res: Response) {
   try {
-    console.log('Corps de la requête reçu:', req.body);
-    
+    console.log("Corps de la requête reçu:", req.body);
+
     const { email, otp, nom, prenom, telephone, motDePasse } = req.body;
 
-    console.log('Champs extraits:', { email, otp, nom, prenom, telephone, motDePasse });
+    console.log("Champs extraits:", {
+      email,
+      otp,
+      nom,
+      prenom,
+      telephone,
+      motDePasse,
+    });
 
     if (!email || !otp || !nom || !prenom || !motDePasse) {
       return res.status(400).json({
@@ -436,21 +443,25 @@ L'équipe Centic`;
 
     console.log(`[OTP] Préparation de l'envoi de l'OTP à ${email}`);
     console.log(`[OTP] Code OTP généré: ${otpCode} (expire: ${expiresAt})`);
-    
+
     // Envoyer l'email avec l'OTP
     const sendResult = await sendMail(email, emailContent);
-    
+
     if (!sendResult.success) {
       console.error(`[OTP] Échec de l'envoi de l'email: ${sendResult.error}`);
       return res.status(500).json({
         success: false,
-        message: "Une erreur est survenue lors de l'envoi du code de vérification. Veuillez réessayer plus tard.",
+        message:
+          "Une erreur est survenue lors de l'envoi du code de vérification. Veuillez réessayer plus tard.",
         code: "EMAIL_SEND_ERROR",
-        details: process.env.NODE_ENV === 'development' ? sendResult.error : undefined
+        details:
+          process.env.NODE_ENV === "development" ? sendResult.error : undefined,
       });
     }
 
-    console.log(`[OTP] Email envoyé avec succès à ${email}. Message ID: ${sendResult.messageId}`);
+    console.log(
+      `[OTP] Email envoyé avec succès à ${email}. Message ID: ${sendResult.messageId}`
+    );
     console.log(`[OTP] Réponse du serveur SMTP: ${JSON.stringify(sendResult)}`);
 
     // Envoyer une réponse de succès
@@ -458,12 +469,12 @@ L'équipe Centic`;
       success: true,
       message: "Un code de vérification a été envoyé à votre adresse email.",
       // En développement, on peut renvoyer l'OTP pour faciliter les tests
-      ...(process.env.NODE_ENV !== "production" && { 
+      ...(process.env.NODE_ENV !== "production" && {
         debug: {
           otp: otpCode,
           expiresAt: expiresAt.toISOString(),
-          email: email
-        }
+          email: email,
+        },
       }),
     };
 

@@ -5,92 +5,182 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.generateCertificate = generateCertificate;
 exports.canDownloadCertificate = canDownloadCertificate;
-const client_1 = require("@prisma/client");
+const date_fns_1 = require("date-fns");
+const fr_1 = require("date-fns/locale/fr");
 const fs_1 = require("fs");
 const path_1 = require("path");
 const pdfkit_1 = __importDefault(require("pdfkit"));
-const date_fns_1 = require("date-fns");
-const fr_1 = require("date-fns/locale/fr");
-const prisma = new client_1.PrismaClient();
+const prisma_1 = require("../../../core/database/prisma");
 function generateCertificate(inscription) {
     return new Promise((resolve, reject) => {
         try {
             const { utilisateur, formation } = inscription;
             // Créer un nouveau document PDF
             const doc = new pdfkit_1.default({
-                size: 'A4',
-                layout: 'landscape',
-                margin: 50
+                size: "A4",
+                layout: "landscape",
+                margin: 60,
             });
             // Générer un nom de fichier unique
-            const fileName = `attestation-${inscription.id}.pdf`;
-            const filePath = (0, path_1.join)(__dirname, '../../public/certificates', fileName);
+            const fileName = `attestation-${inscription.id}-${Date.now()}.pdf`;
+            const filePath = (0, path_1.join)(__dirname, "../../public/certificates", fileName);
             const fileUrl = `/certificates/${fileName}`;
             // Créer un flux d'écriture vers le fichier
             const stream = (0, fs_1.createWriteStream)(filePath);
             // Configurer le document PDF
             doc.pipe(stream);
-            // Ajouter un fond de page
-            doc.rect(0, 0, doc.page.width, doc.page.height).fill('#f8f9fa');
-            // Ajouter un en-tête avec le logo (à personnaliser)
+            // Ajouter un fond de page dégradé
+            const gradient = doc
+                .linearGradient([0, 0], [doc.page.width, doc.page.height])
+                .stop(0, "#f0f9ff")
+                .stop(1, "#e0f2fe");
+            doc.rect(0, 0, doc.page.width, doc.page.height).fill(gradient);
+            // Ajouter une bordure décorative
             doc
-                .fill('#2c3e50')
-                .fontSize(24)
-                .text('ATTESTATION DE FORMATION', { align: 'center', underline: true })
-                .moveDown(2);
-            // Ajouter le contenu de l'attestation
+                .rect(30, 30, doc.page.width - 60, doc.page.height - 60)
+                .lineWidth(2)
+                .strokeColor("#0284c7")
+                .stroke();
             doc
-                .fill('#2c3e50')
-                .fontSize(16)
-                .text('Le responsable de la formation,', { align: 'right' })
-                .moveDown(2)
-                .text('Déclare que :', { align: 'center' })
+                .rect(40, 40, doc.page.width - 80, doc.page.height - 80)
+                .lineWidth(1)
+                .strokeColor("#0ea5e9")
+                .stroke();
+            // En-tête avec logo et titre
+            doc
+                .fill("#0c4a6e")
+                .fontSize(32)
+                .font("Helvetica-Bold")
+                .text("ATTESTATION DE FORMATION", { align: "center", underline: true })
                 .moveDown(1);
-            // Nom et prénom en plus grand
+            // Sous-titre
             doc
-                .fontSize(20)
-                .text(`${utilisateur.prenom} ${utilisateur.nom}`, { align: 'center', underline: true })
+                .fontSize(14)
+                .font("Helvetica")
+                .fill("#475569")
+                .text("Certificat de réussite", { align: "center" })
+                .moveDown(2);
+            // Corps de l'attestation
+            doc
+                .fontSize(16)
+                .font("Helvetica")
+                .fill("#334155")
+                .text("Le soussigné, Directeur des études,", { align: "right" })
                 .moveDown(1)
-                .fontSize(16);
+                .text("Certifie par la présente que :", { align: "center" })
+                .moveDown(1);
+            // Nom de l'étudiant en évidence
+            doc
+                .fontSize(28)
+                .font("Helvetica-Bold")
+                .fill("#0f172a")
+                .text(`${utilisateur.prenom.toUpperCase()} ${utilisateur.nom.toUpperCase()}`, { align: "center" })
+                .moveDown(1);
             // Détails de la formation
             doc
-                .text(`a suivi avec succès la formation intitulée :`, { align: 'center' })
-                .moveDown(1)
-                .fontSize(18)
-                .text(`« ${formation.titre} »`, { align: 'center', underline: true })
-                .moveDown(1)
-                .fontSize(16);
-            // Période de formation
-            const dateDebut = (0, date_fns_1.format)(new Date(formation.dateDebut), 'dd MMMM yyyy', { locale: fr_1.fr });
-            const dateFin = (0, date_fns_1.format)(new Date(formation.dateFin), 'dd MMMM yyyy', { locale: fr_1.fr });
+                .fontSize(16)
+                .font("Helvetica")
+                .fill("#334155")
+                .text("a suivi avec succès et accompli toutes les exigences de la formation intitulée :", { align: "center" })
+                .moveDown(1);
             doc
-                .text(`du ${dateDebut} au ${dateFin}.`, { align: 'center' })
-                .moveDown(3);
-            // Signature
+                .fontSize(22)
+                .font("Helvetica-Bold")
+                .fill("#0284c7")
+                .text(`« ${formation.titre.toUpperCase()} »`, { align: "center" })
+                .moveDown(1);
+            // Période et durée
+            const dateDebut = (0, date_fns_1.format)(new Date(formation.dateDebut), "dd MMMM yyyy", {
+                locale: fr_1.fr,
+            });
+            const dateFin = (0, date_fns_1.format)(new Date(formation.dateFin), "dd MMMM yyyy", {
+                locale: fr_1.fr,
+            });
+            const duree = Math.ceil((new Date(formation.dateFin).getTime() -
+                new Date(formation.dateDebut).getTime()) /
+                (1000 * 60 * 60 * 24));
             doc
-                .text('Fait à [Ville], le ' + (0, date_fns_1.format)(new Date(), 'dd/MM/yyyy', { locale: fr_1.fr }), { align: 'right' })
-                .moveDown(2)
-                .text('Le responsable de la formation', { align: 'right' })
+                .fontSize(16)
+                .font("Helvetica")
+                .fill("#334155")
+                .text(`s'étant déroulée du ${dateDebut} au ${dateFin}`, {
+                align: "center",
+            })
                 .moveDown(0.5)
-                .text('__________________________', { align: 'right' });
-            // Ajouter un pied de page
-            const bottom = doc.page.height - 50;
+                .text(`soit une durée de ${duree} jours`, { align: "center" })
+                .moveDown(2);
+            // Compétences acquises (placeholder)
             doc
-                .fontSize(10)
-                .fill('#7f8c8d')
-                .text('Formation éligible au Compte Personnel de Formation (CPF)', 50, bottom, { align: 'center' });
+                .fontSize(14)
+                .font("Helvetica-Oblique")
+                .fill("#64748b")
+                .text("Cette formation a permis au participant d'acquérir les compétences et connaissances", { align: "center" })
+                .text("nécessaires à la maîtrise des concepts enseignés.", {
+                align: "center",
+            })
+                .moveDown(2);
+            // Mentions officielles
+            doc
+                .fontSize(12)
+                .font("Helvetica")
+                .fill("#475569")
+                .text("Fait pour servir et valoir ce que de droit.", {
+                align: "center",
+            })
+                .moveDown(2);
+            // Signature et date
+            const dateEmission = (0, date_fns_1.format)(new Date(), "dd MMMM yyyy", { locale: fr_1.fr });
+            doc
+                .fontSize(14)
+                .font("Helvetica")
+                .fill("#334155")
+                .text(`Fait à Abidjan, le ${dateEmission}`, { align: "right" })
+                .moveDown(2);
+            // Zone de signature
+            doc
+                .fontSize(14)
+                .text("Le Directeur des études", { align: "right" })
+                .moveDown(0.5)
+                .text("_________________________", { align: "right" })
+                .moveDown(0.5)
+                .fontSize(12)
+                .text("Dr. [Nom du Directeur]", { align: "right" })
+                .font("Helvetica-Oblique")
+                .text("Directeur Académique", { align: "right" });
+            // Ajouter un sceau/watermark
+            doc.save();
+            doc.translate(doc.page.width / 2, doc.page.height / 2);
+            doc.rotate(-45);
+            doc
+                .fontSize(48)
+                .font("Helvetica-Bold")
+                .fillOpacity(0.1)
+                .fill("#0284c7")
+                .text("CERTIFIÉ", { align: "center" });
+            doc.restore();
+            // Pied de page
+            doc.fontSize(10);
+            doc.fill("#64748b");
+            const footerY = doc.page.height - 40;
+            doc.text("Centre de Formation Professionnelle - Agréé par l'État", 50, footerY, { align: "center" });
+            doc.text("N° d'agrée: 1234567890 - www.centreformation.ci", 50, footerY + 15, { align: "center" });
+            // Numéro de l'attestation
+            const numeroAttestation = `ATT-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
+            doc.text(`Numéro: ${numeroAttestation}`, doc.page.width - 50, footerY, {
+                align: "right",
+            });
             // Finaliser le document
             doc.end();
             // Attendre que l'écriture soit terminée
-            stream.on('finish', () => {
+            stream.on("finish", () => {
                 resolve({
-                    content: `Attestation de formation pour ${utilisateur.prenom} ${utilisateur.nom}`,
-                    url: fileUrl
+                    content: `Attestation de formation pour ${utilisateur.prenom} ${utilisateur.nom} - ${formation.titre}`,
+                    url: fileUrl,
                 });
             });
         }
         catch (error) {
-            console.error('Erreur lors de la génération du certificat:', error);
+            console.error("Erreur lors de la génération du certificat:", error);
             reject(error);
         }
     });
@@ -98,27 +188,27 @@ function generateCertificate(inscription) {
 // Vérifier si un utilisateur a le droit de télécharger une attestation
 async function canDownloadCertificate(userId, certificateId) {
     try {
-        const attestation = await prisma.attestation.findUnique({
+        const attestation = await prisma_1.prisma.attestation.findUnique({
             where: { id: certificateId },
             include: {
                 inscription: {
                     select: {
-                        utilisateurId: true
-                    }
-                }
-            }
+                        utilisateurId: true,
+                    },
+                },
+            },
         });
         // Vérifier si l'utilisateur est le propriétaire de l'attestation ou un administrateur
-        const user = await prisma.utilisateur.findUnique({
+        const user = await prisma_1.prisma.utilisateur.findUnique({
             where: { id: userId },
-            select: { role: true }
+            select: { role: true },
         });
         return (attestation?.inscription.utilisateurId === userId ||
-            user?.role === 'ADMIN' ||
-            user?.role === 'FORMATEUR');
+            user?.role === "ADMIN" ||
+            user?.role === "FORMATEUR");
     }
     catch (error) {
-        console.error('Erreur lors de la vérification des droits de téléchargement:', error);
+        console.error("Erreur lors de la vérification des droits de téléchargement:", error);
         return false;
     }
 }

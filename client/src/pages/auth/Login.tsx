@@ -1,12 +1,12 @@
 // src/pages/auth/Login.tsx
 import { Button } from '@/components/ui/button';
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import SEO from '@/components/ui/SEO';
@@ -66,13 +66,13 @@ const Login = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
+    <div className="flex min-h-screen items-center justify-center p-4 bg-black">
       <SEO
         title="Connexion - Votre Compte"
         description="Connectez-vous à votre compte pour accéder à votre espace personnel"
       />
 
-      <div className="w-full max-w-md space-y-6">
+      <div className="w-full max-w-md space-y-6 bg-white p-8 rounded-xl shadow-2xl">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Connexion</h1>
           <p className="text-muted-foreground">
