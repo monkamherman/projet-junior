@@ -9,7 +9,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { FormationForm } from '../components/formation-form';
 import type { FormationFormValues } from '../schemas/formation.schema';
 
-export default function EditFormationPage() {
+function EditFormationPageContent() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
@@ -107,5 +107,13 @@ export default function EditFormationPage() {
         />
       </div>
     </div>
+  );
+}
+
+export default function EditFormationPage() {
+  return (
+    <ProtectedRoute>
+      <EditFormationPageContent />
+    </ProtectedRoute>
   );
 }
