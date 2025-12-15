@@ -32,6 +32,7 @@ enum ModePaiement {
   CARTE
   ESPECES
   VIREMENT
+  SIMULATION
 }
 
 enum StatutPaiement {

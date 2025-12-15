@@ -14,6 +14,7 @@ import Login from '@/pages/auth/Login';
 import Register from '@/pages/auth/Register';
 import ResetPassword from '@/pages/auth/ResetPassword';
 import VerifyOTP from '@/pages/auth/VerifyOTP';
+import FormationConfirmationPage from '@/pages/FormationConfirmationPage';
 import FormationsPage from '@/pages/FormationsPage';
 import Home from '@/pages/home/Home';
 import { createBrowserRouter } from 'react-router-dom';
@@ -80,6 +81,11 @@ const RouterInstance = createBrowserRouter([
       {
         path: 'formations/:id',
         element: <FormationsPage />,
+      },
+      // Confirmation d'inscription
+      {
+        path: 'formations/:id/confirmation',
+        element: <FormationConfirmationPage />,
       },
       // Public catch-all -> 404
       { path: '*', element: <DynamicPageLoader pageKey="error/PageError" /> },

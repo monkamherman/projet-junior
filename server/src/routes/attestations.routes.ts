@@ -5,11 +5,15 @@ import {
   telechargerMonAttestation,
   verifierEligibiliteAttestation,
 } from "../controllers/attestations/attestation.controller";
+import { generateAttestation } from "../controllers/formations/formation.controller";
 import authMiddleware from "../middlewares/auth.middleware";
 
 const router = Router();
 
-// Appliquer l'authentification à toutes les routes
+// Route publique pour la simulation d'attestation
+router.post("/generate", generateAttestation);
+
+// Appliquer l'authentification aux autres routes
 router.use(authMiddleware);
 
 /**

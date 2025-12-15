@@ -1,9 +1,15 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  generateAttestation,
+  getAllFormations,
+  simulatePayment,
+} from '@/features/formations/api/formations';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import {
+  AlertCircle,
   Calendar,
   ChevronLeft,
   Clock,
@@ -265,19 +271,25 @@ const FormationDetail: React.FC<{
           {/* Formateur */}
           <Card>
             <CardHeader>
-              <CardTitle>Formateur</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Formateur
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-center">
                 <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-purple-600 text-2xl font-bold text-white">
-                  {formation.formateur.prenom[0]}
-                  {formation.formateur.nom[0]}
+                  {formation.formateur
+                    ? `${formation.formateur.prenom?.[0] || ''}${formation.formateur.nom?.[0] || ''}`
+                    : '?'}
                 </div>
                 <h3 className="font-semibold">
-                  {formation.formateur.prenom} {formation.formateur.nom}
+                  {formation.formateur
+                    ? `${formation.formateur.prenom || ''} ${formation.formateur.nom || ''}`
+                    : 'Formateur à déterminer'}
                 </h3>
                 <p className="mb-2 text-sm text-gray-500">
-                  {formation.formateur.email}
+                  {formation.formateur?.email || 'Email non disponible'}
                 </p>
               </div>
             </CardContent>
@@ -334,7 +346,22 @@ export default function FormationsPage() {
   const loadFormations = useCallback(async () => {
     try {
       setLoading(true);
-      // Simuler des données pour l'instant
+
+      // Récupérer les données en temps réel depuis l'API
+      const formationsData = await getAllFormations();
+
+      setFormations(formationsData);
+
+      // Si un ID est spécifié, charger cette formation
+      if (id) {
+        const formation = formationsData.find((f: Formation) => f.id === id);
+        if (formation) {
+          setSelectedFormation(formation);
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des formations:', error);
+      // En cas d'erreur API, utiliser les données mockées
       const mockFormations: Formation[] = [
         {
           id: '1',
@@ -421,17 +448,16 @@ Module 5: Projet Final
       ];
 
       setFormations(mockFormations);
+      setError(
+        'Mode démonstration - API non disponible. Les données affichées sont des exemples.'
+      );
 
-      // Si un ID est spécifié, charger cette formation
       if (id) {
         const formation = mockFormations.find((f) => f.id === id);
         if (formation) {
           setSelectedFormation(formation);
         }
       }
-    } catch (error) {
-      console.error('Erreur lors du chargement des formations:', error);
-      setError('Erreur lors du chargement des formations');
     } finally {
       setLoading(false);
     }
@@ -452,9 +478,38 @@ Module 5: Projet Final
     navigate('/formations');
   };
 
-  const handlePayment = (formation: Formation) => {
-    navigate(`/formations/${formation.id}/paiement`);
+  const handlePayment = async (formation: Formation) => {
+    try {
+      // Simulation de paiement
+      const userId = 'user-demo'; // Récupérer depuis le contexte utilisateur
+      const paymentResult = await simulatePayment(formation.id, userId);
+
+      // Si le paiement est réussi, générer l'attestation
+      if (paymentResult.success) {
+        const attestationResult = await generateAttestation(
+          formation.id,
+          userId
+        );
+
+        // Rediriger vers la page de confirmation avec les détails
+        navigate(`/formations/${formation.id}/confirmation`, {
+          state: {
+            formation,
+            payment: paymentResult,
+            attestation: attestationResult,
+          },
+        });
+      } else {
+        setError('Le paiement a échoué. Veuillez réessayer.');
+      }
+    } catch (error) {
+      console.error('Erreur lors du paiement:', error);
+      setError('Erreur lors du traitement du paiement. Veuillez réessayer.');
+    }
   };
+
+  // Afficher un avertissement si on est en mode démo, mais continuer d'afficher les formations
+  const showDemoWarning = error && error.includes('Mode démonstration');
 
   if (loading) {
     return (
@@ -467,7 +522,8 @@ Module 5: Projet Final
     );
   }
 
-  if (error) {
+  // Si erreur critique (pas mode démo), afficher l'erreur
+  if (error && !showDemoWarning) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
@@ -490,6 +546,22 @@ Module 5: Projet Final
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Avertissement mode démo */}
+      {showDemoWarning && (
+        <div className="border-b border-yellow-200 bg-yellow-50">
+          <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-8">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <AlertCircle className="h-5 w-5 text-yellow-600" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-yellow-700">{error}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-white shadow-sm">
         <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
