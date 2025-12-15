@@ -1,12 +1,12 @@
 // src/pages/auth/Login.tsx
 import { Button } from '@/components/ui/button';
 import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import SEO from '@/components/ui/SEO';
@@ -14,7 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import * as z from 'zod';
 
 const formSchema = z.object({
@@ -29,7 +29,11 @@ type FormValues = z.infer<typeof formSchema>;
 const Login = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login } = useAuth();
+
+  // Récupérer l'URL de redirection depuis les paramètres de l'URL
+  const redirectUrl = searchParams.get('redirect') || '/';
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -49,8 +53,8 @@ const Login = () => {
         description: 'Vous êtes maintenant connecté',
       });
 
-      // Rediriger vers la page d'accueil après connexion réussie
-      navigate('/');
+      // Rediriger vers la page demandée ou l'accueil après connexion réussie
+      navigate(redirectUrl);
     } catch (error) {
       console.error('Erreur de connexion :', error);
 
@@ -66,13 +70,13 @@ const Login = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4 bg-black">
+    <div className="flex min-h-screen items-center justify-center bg-black p-4">
       <SEO
         title="Connexion - Votre Compte"
         description="Connectez-vous à votre compte pour accéder à votre espace personnel"
       />
 
-      <div className="w-full max-w-md space-y-6 bg-white p-8 rounded-xl shadow-2xl">
+      <div className="w-full max-w-md space-y-6 rounded-xl bg-white p-8 shadow-2xl">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Connexion</h1>
           <p className="text-muted-foreground">

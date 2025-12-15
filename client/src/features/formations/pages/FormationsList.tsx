@@ -1,3 +1,4 @@
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format } from 'date-fns';
@@ -149,6 +150,14 @@ const AlertDialogContent = ({ children }: { children: React.ReactNode }) => (
 );
 
 export function FormationsList() {
+  return (
+    <ProtectedRoute>
+      <FormationsListContent />
+    </ProtectedRoute>
+  );
+}
+
+function FormationsListContent() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
