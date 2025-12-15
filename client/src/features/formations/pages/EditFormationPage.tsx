@@ -1,5 +1,6 @@
 'use client';
 
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { api } from '@/lib/api';
