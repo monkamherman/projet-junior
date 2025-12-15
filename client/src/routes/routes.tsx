@@ -14,6 +14,7 @@ import Login from '@/pages/auth/Login';
 import Register from '@/pages/auth/Register';
 import ResetPassword from '@/pages/auth/ResetPassword';
 import VerifyOTP from '@/pages/auth/VerifyOTP';
+import FormationsPage from '@/pages/FormationsPage';
 import Home from '@/pages/home/Home';
 import { createBrowserRouter } from 'react-router-dom';
 
@@ -70,10 +71,15 @@ const RouterInstance = createBrowserRouter([
         path: 'mes-attestations',
         element: <MesAttestationsPage />,
       },
-      // Redirection des formations vers le dashboard
+      // Page formations publique
       {
         path: 'formations',
-        element: <DynamicPageLoader pageKey="FormationsPage" />,
+        element: <FormationsPage />,
+      },
+      // Détail d'une formation
+      {
+        path: 'formations/:id',
+        element: <FormationsPage />,
       },
       // Public catch-all -> 404
       { path: '*', element: <DynamicPageLoader pageKey="error/PageError" /> },
