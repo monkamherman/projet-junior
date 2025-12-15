@@ -1,26 +1,26 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.updatePaymentStatus = exports.getPaymentById = exports.getAllPayments = exports.createPayment = void 0;
-const prisma_1 = require("../../../core/database/prisma");
+const client_1 = require("@prisma/client");
+const prisma = new client_1.PrismaClient();
 // Créer un nouveau paiement
 const createPayment = async (req, res) => {
-    const { montant, modePaiement, statut, reference, inscriptionId } = req.body;
+    const { montant, mode, statut, reference, utilisateurId, formationId, telephone, } = req.body;
     try {
-        const payment = await prisma_1.prisma.paiement.create({
+        const payment = await prisma.paiement.create({
             data: {
                 montant: parseFloat(montant),
-                modePaiement,
+                mode,
                 statut,
                 reference,
-                inscription: { connect: { id: inscriptionId } },
+                utilisateurId,
+                formationId,
+                telephone,
             },
             include: {
-                inscription: {
-                    include: {
-                        utilisateur: true,
-                        formation: true,
-                    },
-                },
+                utilisateur: true,
+                formation: true,
+                inscriptions: true,
             },
         });
         res.status(201).json(payment);
@@ -34,6 +34,7 @@ exports.createPayment = createPayment;
 const getAllPayments = async (req, res) => {
     try {
         const { startDate, endDate, statut } = req.query;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const where = {};
         if (startDate && endDate) {
             where.datePaiement = {
@@ -44,28 +45,25 @@ const getAllPayments = async (req, res) => {
         if (statut) {
             where.statut = statut;
         }
-        const payments = await prisma_1.prisma.paiement.findMany({
+        const payments = await prisma.paiement.findMany({
             where,
             include: {
-                inscription: {
-                    include: {
-                        utilisateur: {
-                            select: {
-                                id: true,
-                                nom: true,
-                                prenom: true,
-                                email: true,
-                            },
-                        },
-                        formation: {
-                            select: {
-                                id: true,
-                                titre: true,
-                                prix: true,
-                            },
-                        },
+                utilisateur: {
+                    select: {
+                        id: true,
+                        nom: true,
+                        prenom: true,
+                        email: true,
                     },
                 },
+                formation: {
+                    select: {
+                        id: true,
+                        titre: true,
+                        prix: true,
+                    },
+                },
+                inscriptions: true,
             },
             orderBy: {
                 datePaiement: "desc",
@@ -84,32 +82,29 @@ exports.getAllPayments = getAllPayments;
 const getPaymentById = async (req, res) => {
     const { id } = req.params;
     try {
-        const payment = await prisma_1.prisma.paiement.findUnique({
+        const payment = await prisma.paiement.findUnique({
             where: { id },
             include: {
-                inscription: {
-                    include: {
-                        utilisateur: {
-                            select: {
-                                id: true,
-                                nom: true,
-                                prenom: true,
-                                email: true,
-                                telephone: true,
-                            },
-                        },
-                        formation: {
-                            select: {
-                                id: true,
-                                titre: true,
-                                description: true,
-                                prix: true,
-                                dateDebut: true,
-                                dateFin: true,
-                            },
-                        },
+                utilisateur: {
+                    select: {
+                        id: true,
+                        nom: true,
+                        prenom: true,
+                        email: true,
+                        telephone: true,
                     },
                 },
+                formation: {
+                    select: {
+                        id: true,
+                        titre: true,
+                        description: true,
+                        prix: true,
+                        dateDebut: true,
+                        dateFin: true,
+                    },
+                },
+                inscriptions: true,
             },
         });
         if (!payment) {
@@ -129,24 +124,27 @@ const updatePaymentStatus = async (req, res) => {
     const { id } = req.params;
     const { statut } = req.body;
     try {
-        const updatedPayment = await prisma_1.prisma.paiement.update({
+        const updatedPayment = await prisma.paiement.update({
             where: { id },
             data: { statut },
             include: {
-                inscription: {
-                    include: {
-                        utilisateur: true,
-                        formation: true,
-                    },
-                },
+                utilisateur: true,
+                formation: true,
+                inscriptions: true,
             },
         });
         // Si le paiement est validé, mettre à jour le statut de l'inscription
-        if (statut === "SUCCES") {
-            await prisma_1.prisma.inscription.update({
-                where: { id: updatedPayment.inscriptionId },
-                data: { statut: "EN_COURS" },
+        if (statut === "VALIDE") {
+            // Trouver l'inscription associée à ce paiement
+            const inscription = await prisma.inscription.findFirst({
+                where: { paiementId: id },
             });
+            if (inscription) {
+                await prisma.inscription.update({
+                    where: { id: inscription.id },
+                    data: { statut: "EN_COURS" },
+                });
+            }
         }
         res.json(updatedPayment);
     }

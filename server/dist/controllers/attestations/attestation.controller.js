@@ -1,17 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.telechargerMonAttestation = exports.genererMonAttestation = exports.verifierEligibiliteAttestation = exports.getMesAttestations = void 0;
-const prisma_1 = require("../../../core/database/prisma");
+const client_1 = require("@prisma/client");
 const certificateService_1 = require("../../services/certificateService");
-/**
- * Récupérer les attestations de l'utilisateur connecté
- */
+const prisma = new client_1.PrismaClient();
 const getMesAttestations = async (req, res) => {
     try {
         if (!req.user) {
             return res.status(401).json({ message: "Non autorisé" });
         }
-        const attestations = await prisma_1.prisma.attestation.findMany({
+        const attestations = await prisma.attestation.findMany({
             where: {
                 inscription: {
                     utilisateurId: req.user.id,
@@ -59,7 +57,7 @@ const verifierEligibiliteAttestation = async (req, res) => {
         }
         const { formationId } = req.params;
         // Vérifier l'inscription et le paiement
-        const inscription = await prisma_1.prisma.inscription.findFirst({
+        const inscription = await prisma.inscription.findFirst({
             where: {
                 utilisateurId: req.user.id,
                 formationId,
@@ -131,7 +129,7 @@ const genererMonAttestation = async (req, res) => {
         }
         const { formationId } = req.body;
         // Vérifier l'éligibilité
-        const inscription = await prisma_1.prisma.inscription.findFirst({
+        const inscription = await prisma.inscription.findFirst({
             where: {
                 utilisateurId: req.user.id,
                 formationId,
@@ -171,7 +169,7 @@ const genererMonAttestation = async (req, res) => {
         // Générer le certificat
         const certificateData = await (0, certificateService_1.generateCertificate)(inscription);
         // Créer l'attestation
-        const attestation = await prisma_1.prisma.attestation.create({
+        const attestation = await prisma.attestation.create({
             data: {
                 numero: `ATT-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
                 urlPdf: certificateData.url,
@@ -213,7 +211,7 @@ const telechargerMonAttestation = async (req, res) => {
             return res.status(401).json({ message: "Non autorisé" });
         }
         const { id } = req.params;
-        const attestation = await prisma_1.prisma.attestation.findUnique({
+        const attestation = await prisma.attestation.findUnique({
             where: { id },
             include: {
                 inscription: {
@@ -234,7 +232,7 @@ const telechargerMonAttestation = async (req, res) => {
                 .json({ message: "Non autorisé à accéder à cette attestation" });
         }
         // Mettre à jour le statut
-        await prisma_1.prisma.attestation.update({
+        await prisma.attestation.update({
             where: { id },
             data: {
                 statut: "TELECHARGEE",

@@ -18,14 +18,15 @@ export async function createPayment(req: Request, res: Response) {
     // Créer le paiement
     const payment = await prisma.paiement.create({
       data: {
-        inscriptionId,
         reference,
         montant,
         mode,
         commentaire,
-        statut: "SUCCES",
+        statut: "VALIDE",
         datePaiement: new Date(),
         utilisateurId: inscription.utilisateurId,
+        formationId: inscription.formationId,
+        telephone: req.body.telephone || "0000000000", // Valeur par défaut
       },
     });
 

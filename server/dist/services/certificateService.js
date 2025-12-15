@@ -5,12 +5,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.generateCertificate = generateCertificate;
 exports.canDownloadCertificate = canDownloadCertificate;
+const client_1 = require("@prisma/client");
 const date_fns_1 = require("date-fns");
 const fr_1 = require("date-fns/locale/fr");
 const fs_1 = require("fs");
 const path_1 = require("path");
 const pdfkit_1 = __importDefault(require("pdfkit"));
-const prisma_1 = require("../../../core/database/prisma");
+const prisma = new client_1.PrismaClient();
 function generateCertificate(inscription) {
     return new Promise((resolve, reject) => {
         try {
@@ -31,7 +32,7 @@ function generateCertificate(inscription) {
             doc.pipe(stream);
             // Ajouter un fond de page dégradé
             const gradient = doc
-                .linearGradient([0, 0], [doc.page.width, doc.page.height])
+                .linearGradient(0, 0, doc.page.width, doc.page.height)
                 .stop(0, "#f0f9ff")
                 .stop(1, "#e0f2fe");
             doc.rect(0, 0, doc.page.width, doc.page.height).fill(gradient);
@@ -188,7 +189,7 @@ function generateCertificate(inscription) {
 // Vérifier si un utilisateur a le droit de télécharger une attestation
 async function canDownloadCertificate(userId, certificateId) {
     try {
-        const attestation = await prisma_1.prisma.attestation.findUnique({
+        const attestation = await prisma.attestation.findUnique({
             where: { id: certificateId },
             include: {
                 inscription: {
@@ -199,7 +200,7 @@ async function canDownloadCertificate(userId, certificateId) {
             },
         });
         // Vérifier si l'utilisateur est le propriétaire de l'attestation ou un administrateur
-        const user = await prisma_1.prisma.utilisateur.findUnique({
+        const user = await prisma.utilisateur.findUnique({
             where: { id: userId },
             select: { role: true },
         });

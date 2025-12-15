@@ -5,32 +5,34 @@ exports.getPayments = getPayments;
 exports.getPaymentById = getPaymentById;
 exports.updatePayment = updatePayment;
 exports.deletePayment = deletePayment;
-const prisma_1 = require("../../../core/database/prisma");
+const client_1 = require("@prisma/client");
+const prisma = new client_1.PrismaClient();
 async function createPayment(req, res) {
     const { inscriptionId, reference, montant, mode, commentaire } = req.body;
     try {
         // Vérifier que l'inscription existe
-        const inscription = await prisma_1.prisma.inscription.findUnique({
+        const inscription = await prisma.inscription.findUnique({
             where: { id: inscriptionId },
         });
         if (!inscription) {
             return res.status(404).json({ message: "Inscription non trouvée." });
         }
         // Créer le paiement
-        const payment = await prisma_1.prisma.paiement.create({
+        const payment = await prisma.paiement.create({
             data: {
-                inscriptionId,
                 reference,
                 montant,
                 mode,
                 commentaire,
-                statut: "SUCCES",
+                statut: "VALIDE",
                 datePaiement: new Date(),
                 utilisateurId: inscription.utilisateurId,
+                formationId: inscription.formationId,
+                telephone: req.body.telephone || "0000000000", // Valeur par défaut
             },
         });
         // Mettre à jour le statut de l'inscription
-        await prisma_1.prisma.inscription.update({
+        await prisma.inscription.update({
             where: { id: inscriptionId },
             data: { statut: "VALIDEE" },
         });
@@ -46,7 +48,7 @@ async function createPayment(req, res) {
 }
 async function getPayments(req, res) {
     try {
-        const payments = await prisma_1.prisma.paiement.findMany();
+        const payments = await prisma.paiement.findMany();
         res.json(payments);
     }
     catch (error) {
@@ -59,7 +61,7 @@ async function getPayments(req, res) {
 async function getPaymentById(req, res) {
     const { id } = req.params;
     try {
-        const payment = await prisma_1.prisma.paiement.findUnique({ where: { id } });
+        const payment = await prisma.paiement.findUnique({ where: { id } });
         if (!payment) {
             return res.status(404).json({ message: "Paiement non trouvé." });
         }
@@ -76,11 +78,11 @@ async function updatePayment(req, res) {
     const { id } = req.params;
     const { reference, montant, mode, statut, commentaire } = req.body;
     try {
-        const payment = await prisma_1.prisma.paiement.findUnique({ where: { id } });
+        const payment = await prisma.paiement.findUnique({ where: { id } });
         if (!payment) {
             return res.status(404).json({ message: "Paiement non trouvé." });
         }
-        const updatedPayment = await prisma_1.prisma.paiement.update({
+        const updatedPayment = await prisma.paiement.update({
             where: { id },
             data: {
                 reference,
@@ -102,11 +104,11 @@ async function updatePayment(req, res) {
 async function deletePayment(req, res) {
     const { id } = req.params;
     try {
-        const payment = await prisma_1.prisma.paiement.findUnique({ where: { id } });
+        const payment = await prisma.paiement.findUnique({ where: { id } });
         if (!payment) {
             return res.status(404).json({ message: "Paiement non trouvé." });
         }
-        await prisma_1.prisma.paiement.delete({ where: { id } });
+        await prisma.paiement.delete({ where: { id } });
         res.json({ message: "Paiement supprimé avec succès." });
     }
     catch (error) {

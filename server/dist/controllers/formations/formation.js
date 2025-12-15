@@ -6,10 +6,11 @@ exports.getUserFormations = getUserFormations;
 exports.createFormation = createFormation;
 exports.updateFormation = updateFormation;
 exports.deleteFormation = deleteFormation;
-const prisma_1 = require("../../../core/database/prisma");
+const client_1 = require("@prisma/client");
+const prisma = new client_1.PrismaClient();
 async function getFormations(req, res) {
     try {
-        const formations = await prisma_1.prisma.formation.findMany();
+        const formations = await prisma.formation.findMany();
         res.json(formations);
     }
     catch (error) {
@@ -24,7 +25,7 @@ async function getFormations(req, res) {
 async function getFormationById(req, res) {
     const { id } = req.params;
     try {
-        const formation = await prisma_1.prisma.formation.findUnique({
+        const formation = await prisma.formation.findUnique({
             where: { id },
             include: {
                 formateur: {
@@ -57,7 +58,7 @@ async function getUserFormations(req, res) {
             return res.status(401).json({ message: "Non autorisé." });
         }
         // Première requête pour obtenir les inscriptions de l'utilisateur
-        const inscriptions = await prisma_1.prisma.inscription.findMany({
+        const inscriptions = await prisma.inscription.findMany({
             where: {
                 utilisateurId: req.user.id,
             },
@@ -127,7 +128,7 @@ async function createFormation(req, res) {
                 .status(401)
                 .json({ message: "Non autorisé - Utilisateur non identifié" });
         }
-        const newFormation = await prisma_1.prisma.formation.create({
+        const newFormation = await prisma.formation.create({
             data: {
                 titre,
                 description,
@@ -143,7 +144,7 @@ async function createFormation(req, res) {
     }
     catch (error) {
         console.error("ERREUR lors de la création de la formation:", error);
-        console.error("Détails de l'erreur:", error.message);
+        console.error("Détails de l'erreur:", error instanceof Error ? error.message : String(error));
         // Gestion spécifique des erreurs Prisma
         if (error instanceof Error && "code" in error && error.code === "P2002") {
             return res.status(400).json({
@@ -153,7 +154,11 @@ async function createFormation(req, res) {
         }
         res.status(500).json({
             message: "Erreur lors de la création de la formation",
-            error: process.env.NODE_ENV === "development" ? error.message : undefined,
+            error: process.env.NODE_ENV === "development"
+                ? error instanceof Error
+                    ? error.message
+                    : String(error)
+                : undefined,
         });
     }
 }
@@ -161,11 +166,11 @@ async function updateFormation(req, res) {
     const { id } = req.params;
     const { titre, description, prix, dateDebut, dateFin, formateurId } = req.body;
     try {
-        const formation = await prisma_1.prisma.formation.findUnique({ where: { id } });
+        const formation = await prisma.formation.findUnique({ where: { id } });
         if (!formation) {
             return res.status(404).json({ message: "Formation non trouvée." });
         }
-        const updatedFormation = await prisma_1.prisma.formation.update({
+        const updatedFormation = await prisma.formation.update({
             where: { id },
             data: {
                 titre,
@@ -188,11 +193,11 @@ async function updateFormation(req, res) {
 async function deleteFormation(req, res) {
     const { id } = req.params;
     try {
-        const formation = await prisma_1.prisma.formation.findUnique({ where: { id } });
+        const formation = await prisma.formation.findUnique({ where: { id } });
         if (!formation) {
             return res.status(404).json({ message: "Formation non trouvée." });
         }
-        await prisma_1.prisma.formation.delete({ where: { id } });
+        await prisma.formation.delete({ where: { id } });
         res.json({ message: "Formation supprimée avec succès." });
     }
     catch (error) {

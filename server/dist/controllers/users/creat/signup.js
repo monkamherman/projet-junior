@@ -6,8 +6,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.signup = signup;
 exports.verifyOTP = verifyOTP;
 exports.sendOTP = sendOTP;
+const client_1 = require("@prisma/client");
+const bcrypt_1 = __importDefault(require("bcrypt"));
 const zod_1 = require("zod");
 const sendmail_1 = __importDefault(require("../../../nodemailer/sendmail"));
+const prisma = new client_1.PrismaClient();
 // Fonction pour valider la force du mot de passe
 const validatePassword = (password) => {
     if (password.length < 8) {
@@ -89,7 +92,6 @@ const sendOtpSchema = zod_1.z.object({
         message: "Le mot de passe doit contenir au moins une majuscule, un chiffre et un caractère spécial",
     }),
 });
-const prisma = new PrismaClient();
 // Fonction pour générer un OTP à 6 chiffres
 function generateOTP() {
     return Math.floor(100000 + Math.random() * 900000).toString();
@@ -160,7 +162,7 @@ async function signup(req, res) {
             data: { validated: true },
         });
         // Hasher le mot de passe
-        const hashedPassword = await bcrypt.hash(motDePasse, 12);
+        const hashedPassword = await bcrypt_1.default.hash(motDePasse, 12);
         // Créer l'utilisateur dans une transaction pour assurer l'intégrité des données
         await prisma.$transaction(async (tx) => {
             // Créer l'utilisateur
@@ -242,7 +244,7 @@ async function verifyOTP(req, res) {
             });
         }
         // Hasher le mot de passe
-        const hashedPassword = await bcrypt.hash(motDePasse, 10);
+        const hashedPassword = await bcrypt_1.default.hash(motDePasse, 10);
         // Créer l'utilisateur
         const user = await prisma.utilisateur.create({
             data: {

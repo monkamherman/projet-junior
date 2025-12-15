@@ -24,8 +24,9 @@ var __importStar = (this && this.__importStar) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.listerPaiementsUtilisateur = exports.getStatutPaiement = exports.creerPaiement = void 0;
+const client_1 = require("@prisma/client");
 const zod_1 = require("zod");
-const prisma_1 = require("../../../core/database/prisma");
+const prisma = new client_1.PrismaClient();
 // Schéma de validation pour la création d'un paiement
 const createPaiementSchema = zod_1.z.object({
     formationId: zod_1.z.string().min(1, "L'ID de la formation est requis"),
@@ -57,8 +58,8 @@ const creerPaiement = async (req, res) => {
         const utilisateurId = req.user.id;
         // Vérifier si l'utilisateur et la formation existent
         const [utilisateur, formation] = await Promise.all([
-            prisma_1.prisma.utilisateur.findUnique({ where: { id: utilisateurId } }),
-            prisma_1.prisma.formation.findUnique({ where: { id: formationId } }),
+            prisma.utilisateur.findUnique({ where: { id: utilisateurId } }),
+            prisma.formation.findUnique({ where: { id: formationId } }),
         ]);
         if (!utilisateur) {
             return res.status(404).json({ message: "Utilisateur non trouvé" });
@@ -67,7 +68,7 @@ const creerPaiement = async (req, res) => {
             return res.status(404).json({ message: "Formation non trouvée" });
         }
         // Vérifier si l'utilisateur est déjà inscrit à cette formation
-        const inscriptionExistante = await prisma_1.prisma.inscription.findFirst({
+        const inscriptionExistante = await prisma.inscription.findFirst({
             where: {
                 utilisateurId,
                 formationId,
@@ -81,7 +82,7 @@ const creerPaiement = async (req, res) => {
         // Créer une référence unique pour le paiement
         const reference = `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
         // Créer le paiement
-        const paiement = await prisma_1.prisma.paiement.create({
+        const paiement = await prisma.paiement.create({
             data: {
                 reference,
                 montant,
@@ -99,7 +100,7 @@ const creerPaiement = async (req, res) => {
         // Pour ce prototype, nous allons simuler un paiement réussi après 3 secondes
         setTimeout(async () => {
             try {
-                await prisma_1.prisma.paiement.update({
+                await prisma.paiement.update({
                     where: { id: paiement.id },
                     data: {
                         statut: "VALIDE",
@@ -107,7 +108,7 @@ const creerPaiement = async (req, res) => {
                     },
                 });
                 // Créer automatiquement une inscription si le paiement est validé
-                const inscription = await prisma_1.prisma.inscription.create({
+                const inscription = await prisma.inscription.create({
                     data: {
                         dateInscription: new Date(),
                         statut: "VALIDEE",
@@ -117,7 +118,7 @@ const creerPaiement = async (req, res) => {
                     },
                 });
                 // Vérifier si la formation est terminée pour générer automatiquement l'attestation
-                const formation = await prisma_1.prisma.formation.findUnique({
+                const formation = await prisma.formation.findUnique({
                     where: { id: formationId },
                 });
                 if (formation) {
@@ -128,7 +129,7 @@ const creerPaiement = async (req, res) => {
                         try {
                             const { generateCertificate } = await Promise.resolve().then(() => __importStar(require("../../services/certificateService")));
                             // Récupérer l'inscription complète avec les relations
-                            const inscriptionComplete = await prisma_1.prisma.inscription.findUnique({
+                            const inscriptionComplete = await prisma.inscription.findUnique({
                                 where: { id: inscription.id },
                                 include: {
                                     utilisateur: true,
@@ -138,7 +139,7 @@ const creerPaiement = async (req, res) => {
                             if (inscriptionComplete) {
                                 const certificateData = await generateCertificate(inscriptionComplete);
                                 // Créer l'attestation
-                                await prisma_1.prisma.attestation.create({
+                                await prisma.attestation.create({
                                     data: {
                                         numero: `ATT-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
                                         urlPdf: certificateData.url,
@@ -184,7 +185,7 @@ exports.creerPaiement = creerPaiement;
 const getStatutPaiement = async (req, res) => {
     try {
         const { reference } = req.params;
-        const paiement = await prisma_1.prisma.paiement.findUnique({
+        const paiement = await prisma.paiement.findUnique({
             where: { reference },
             include: {
                 formation: {
@@ -235,7 +236,7 @@ const listerPaiementsUtilisateur = async (req, res) => {
             return res.status(401).json({ message: "Non autorisé" });
         }
         const utilisateurId = req.user.id;
-        const paiements = await prisma_1.prisma.paiement.findMany({
+        const paiements = await prisma.paiement.findMany({
             where: { utilisateurId },
             include: {
                 formation: {

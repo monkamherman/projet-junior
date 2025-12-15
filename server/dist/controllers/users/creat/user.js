@@ -6,12 +6,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getUser = getUser;
 exports.updateUser = updateUser;
 exports.deleteUser = deleteUser;
+const client_1 = require("@prisma/client");
 const bcrypt_1 = __importDefault(require("bcrypt"));
-const prisma_1 = require("../../../core/database/prisma");
+const prisma = new client_1.PrismaClient();
 async function getUser(req, res) {
     const { id } = req.params;
     try {
-        const user = await prisma_1.prisma.utilisateur.findUnique({
+        const user = await prisma.utilisateur.findUnique({
             where: { id },
             select: {
                 id: true,
@@ -40,7 +41,7 @@ async function updateUser(req, res) {
     const { id } = req.params;
     const { nom, prenom, email, telephone, motDePasse } = req.body;
     try {
-        const user = await prisma_1.prisma.utilisateur.findUnique({ where: { id } });
+        const user = await prisma.utilisateur.findUnique({ where: { id } });
         if (!user) {
             return res.status(404).json({ message: "Utilisateur non trouvé." });
         }
@@ -53,7 +54,7 @@ async function updateUser(req, res) {
         if (motDePasse) {
             dataToUpdate.motDePasse = await bcrypt_1.default.hash(motDePasse, 10);
         }
-        const updatedUser = await prisma_1.prisma.utilisateur.update({
+        const updatedUser = await prisma.utilisateur.update({
             where: { id },
             data: dataToUpdate,
             select: {
@@ -79,11 +80,11 @@ async function updateUser(req, res) {
 async function deleteUser(req, res) {
     const { id } = req.params;
     try {
-        const user = await prisma_1.prisma.utilisateur.findUnique({ where: { id } });
+        const user = await prisma.utilisateur.findUnique({ where: { id } });
         if (!user) {
             return res.status(404).json({ message: "Utilisateur non trouvé." });
         }
-        await prisma_1.prisma.utilisateur.delete({ where: { id } });
+        await prisma.utilisateur.delete({ where: { id } });
         res.json({ message: "Utilisateur supprimé avec succès." });
     }
     catch (error) {

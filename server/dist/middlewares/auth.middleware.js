@@ -4,8 +4,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.checkRole = exports.authMiddleware = void 0;
+const client_1 = require("@prisma/client");
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const prisma_1 = require("../../../core/database/prisma");
+const prisma = new client_1.PrismaClient();
 /**
  * Middleware d'authentification
  * Vérifie la présence et la validité du token JWT
@@ -52,7 +53,7 @@ const authMiddleware = async (req, res, next) => {
         }
         // Récupérer l'utilisateur depuis la base de données
         console.log("Récupération de l'utilisateur avec ID:", decoded.userId);
-        const user = await prisma_1.prisma.utilisateur.findUnique({
+        const user = await prisma.utilisateur.findUnique({
             where: { id: decoded.userId },
             select: {
                 id: true,

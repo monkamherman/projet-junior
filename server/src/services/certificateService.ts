@@ -55,7 +55,7 @@ export function generateCertificate(
 
       // Ajouter un fond de page dégradé
       const gradient = doc
-        .linearGradient([0, 0], [doc.page.width, doc.page.height])
+        .linearGradient(0, 0, doc.page.width, doc.page.height)
         .stop(0, "#f0f9ff")
         .stop(1, "#e0f2fe");
       doc.rect(0, 0, doc.page.width, doc.page.height).fill(gradient);

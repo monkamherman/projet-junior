@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Utilisateur } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { Request, Response } from "express";
 

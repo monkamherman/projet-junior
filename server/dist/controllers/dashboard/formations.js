@@ -1,12 +1,13 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteFormation = exports.updateFormation = exports.getFormationById = exports.getAllFormations = exports.createFormation = void 0;
-const prisma_1 = require("../../../core/database/prisma");
+const client_1 = require("@prisma/client");
+const prisma = new client_1.PrismaClient();
 // Créer une nouvelle formation
 const createFormation = async (req, res) => {
     const { titre, description, prix, dateDebut, dateFin, formateurId } = req.body;
     try {
-        const formation = await prisma_1.prisma.formation.create({
+        const formation = await prisma.formation.create({
             data: {
                 titre,
                 description,
@@ -28,7 +29,7 @@ exports.createFormation = createFormation;
 // Récupérer toutes les formations
 const getAllFormations = async (req, res) => {
     try {
-        const formations = await prisma_1.prisma.formation.findMany({
+        const formations = await prisma.formation.findMany({
             include: {
                 formateur: {
                     select: {
@@ -61,7 +62,7 @@ exports.getAllFormations = getAllFormations;
 const getFormationById = async (req, res) => {
     const { id } = req.params;
     try {
-        const formation = await prisma_1.prisma.formation.findUnique({
+        const formation = await prisma.formation.findUnique({
             where: { id },
             include: {
                 formateur: {
@@ -82,7 +83,6 @@ const getFormationById = async (req, res) => {
                                 email: true,
                             },
                         },
-                        statut: true,
                     },
                 },
             },
@@ -104,7 +104,7 @@ const updateFormation = async (req, res) => {
     const { id } = req.params;
     const { titre, description, prix, dateDebut, dateFin, statut, formateurId } = req.body;
     try {
-        const updatedFormation = await prisma_1.prisma.formation.update({
+        const updatedFormation = await prisma.formation.update({
             where: { id },
             data: {
                 titre,
@@ -129,7 +129,7 @@ exports.updateFormation = updateFormation;
 const deleteFormation = async (req, res) => {
     const { id } = req.params;
     try {
-        await prisma_1.prisma.formation.delete({
+        await prisma.formation.delete({
             where: { id },
         });
         res.json({ message: "Formation supprimée avec succès" });

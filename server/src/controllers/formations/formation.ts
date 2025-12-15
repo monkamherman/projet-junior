@@ -9,7 +9,7 @@ interface AuthenticatedUser {
   email: string;
   nom: string;
   prenom: string;
-  telephone: string;
+  telephone: string | null;
 }
 
 interface AuthenticatedRequest extends Request {
@@ -190,7 +190,10 @@ export async function createFormation(req: Request, res: Response) {
     res.status(201).json(newFormation);
   } catch (error: unknown) {
     console.error("ERREUR lors de la création de la formation:", error);
-    console.error("Détails de l'erreur:", error.message);
+    console.error(
+      "Détails de l'erreur:",
+      error instanceof Error ? error.message : String(error)
+    );
 
     // Gestion spécifique des erreurs Prisma
     if (error instanceof Error && "code" in error && error.code === "P2002") {
@@ -202,7 +205,12 @@ export async function createFormation(req: Request, res: Response) {
 
     res.status(500).json({
       message: "Erreur lors de la création de la formation",
-      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+      error:
+        process.env.NODE_ENV === "development"
+          ? error instanceof Error
+            ? error.message
+            : String(error)
+          : undefined,
     });
   }
 }

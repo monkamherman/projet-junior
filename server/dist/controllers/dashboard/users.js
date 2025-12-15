@@ -1,11 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deactivateUser = exports.updateUser = exports.getUserById = exports.getAllUsers = void 0;
-const prisma_1 = require("../../../core/database/prisma");
+const client_1 = require("@prisma/client");
+const prisma = new client_1.PrismaClient();
 // Récupérer tous les utilisateurs
 const getAllUsers = async (req, res) => {
     try {
-        const users = await prisma_1.prisma.utilisateur.findMany({
+        const users = await prisma.utilisateur.findMany({
             select: {
                 id: true,
                 nom: true,
@@ -29,7 +30,7 @@ exports.getAllUsers = getAllUsers;
 const getUserById = async (req, res) => {
     const { id } = req.params;
     try {
-        const user = await prisma_1.prisma.utilisateur.findUnique({
+        const user = await prisma.utilisateur.findUnique({
             where: { id },
             include: {
                 inscriptions: {
@@ -58,7 +59,7 @@ const updateUser = async (req, res) => {
     const { id } = req.params;
     const { nom, prenom, email, telephone, role } = req.body;
     try {
-        const updatedUser = await prisma_1.prisma.utilisateur.update({
+        const updatedUser = await prisma.utilisateur.update({
             where: { id },
             data: {
                 nom,
@@ -81,7 +82,7 @@ exports.updateUser = updateUser;
 const deactivateUser = async (req, res) => {
     const { id } = req.params;
     try {
-        await prisma_1.prisma.utilisateur.delete({
+        await prisma.utilisateur.delete({
             where: { id },
         });
         res.json({ message: "Utilisateur désactivé avec succès" });

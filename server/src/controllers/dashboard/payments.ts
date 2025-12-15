@@ -5,8 +5,15 @@ const prisma = new PrismaClient();
 
 // Créer un nouveau paiement
 export const createPayment = async (req: Request, res: Response) => {
-  const { montant, mode, statut, reference, utilisateurId, formationId } =
-    req.body;
+  const {
+    montant,
+    mode,
+    statut,
+    reference,
+    utilisateurId,
+    formationId,
+    telephone,
+  } = req.body;
 
   try {
     const payment = await prisma.paiement.create({
@@ -17,6 +24,7 @@ export const createPayment = async (req: Request, res: Response) => {
         reference,
         utilisateurId,
         formationId,
+        telephone,
       },
       include: {
         utilisateur: true,
@@ -36,7 +44,8 @@ export const getAllPayments = async (req: Request, res: Response) => {
   try {
     const { startDate, endDate, statut } = req.query;
 
-    const where: any = {};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const where: Record<string, any> = {};
 
     if (startDate && endDate) {
       where.datePaiement = {

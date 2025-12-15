@@ -6,9 +6,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.login = login;
 exports.refreshToken = refreshToken;
 exports.logout = logout;
+const client_1 = require("@prisma/client");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const prisma_1 = require("../../../core/database/prisma");
+const prisma = new client_1.PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
     throw new Error("JWT_SECRET is not defined in environment variables");
@@ -24,7 +25,7 @@ async function login(req, res) {
     }
     try {
         console.log("Recherche de l'utilisateur dans la base de données...");
-        const user = await prisma_1.prisma.utilisateur.findUnique({ where: { email } });
+        const user = await prisma.utilisateur.findUnique({ where: { email } });
         if (!user) {
             console.error("Utilisateur non trouvé pour l'email:", email);
             return res
@@ -88,7 +89,7 @@ async function refreshToken(req, res) {
     }
     try {
         const decoded = jsonwebtoken_1.default.verify(refresh, process.env.JWT_REFRESH_SECRET);
-        const user = await prisma_1.prisma.utilisateur.findUnique({
+        const user = await prisma.utilisateur.findUnique({
             where: { id: decoded.userId },
             select: {
                 id: true,
