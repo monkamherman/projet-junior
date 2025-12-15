@@ -1,16 +1,14 @@
 import {
-  useGenerateAttestation,
+  useGenerateAttestationMutation,
   useUserFormations,
 } from '@/features/formations/hooks/useFormations';
 import { useUserPayments } from '@/features/payments/hooks/usePayments';
 import {
   Alert,
-  Avatar,
   Badge,
   Button,
   Card,
   Container,
-  FileButton,
   Group,
   LoadingOverlay,
   Paper,
@@ -35,17 +33,19 @@ import {
   IconLock,
   IconReceipt2,
   IconSchool,
-  IconUpload,
   IconUser,
-  IconUserCircle,
   IconX,
   IconX as IconXCircle,
 } from '@tabler/icons-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import React, { useState } from 'react';
-import type { UserProfile } from '../hooks/useProfile';
-import { useProfile, useUpdatePassword, useUpdateProfile, useUploadAvatar } from '../hooks/useProfile';
+import {
+  useProfile,
+  useUpdatePassword,
+  useUpdateProfile,
+} from '../hooks/useProfile';
+import type { UserProfile } from '../types';
 
 const useStyles = createStyles((theme) => ({
   profileHeader: {
@@ -54,27 +54,6 @@ const useStyles = createStyles((theme) => ({
     alignItems: 'center',
     textAlign: 'center',
     marginBottom: theme.spacing.xl,
-  },
-  avatarWrapper: {
-    position: 'relative',
-    marginBottom: theme.spacing.md,
-  },
-  avatar: {
-    width: 120,
-    height: 120,
-    border: '4px solid',
-    borderColor: theme.colors.blue[6],
-    boxShadow: theme.shadows.md,
-  },
-  changeAvatarBtn: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    backgroundColor: theme.colors[theme.primaryColor][6],
-    color: theme.white,
-    '&:hover': {
-      backgroundColor: theme.colors[theme.primaryColor][7],
-    },
   },
   tabContent: {
     padding: theme.spacing.md,
@@ -113,18 +92,30 @@ export function ProfilePage() {
   const [activeTab, setActiveTab] = useState<string | null>('profile');
 
   // Charger les données des formations et des paiements
-  const { data: formations = [], isLoading: isLoadingFormations } = useUserFormations() as { data: Array<{ id: string; titre: string; dateDebut: string; dateFin: string; statut: string; formateur: { prenom: string; nom: string } }>; isLoading: boolean };
-  const { data: payments = [], isLoading: isLoadingPayments } = useUserPayments() as { data: Array<{ id: string; montant: number; methode: string; statut: string; date: string }>; isLoading: boolean };
-  const { mutate: generateAttestation, isPending: isGeneratingAttestation } = useGenerateAttestation() as {
-    mutate: (id: string) => Promise<Blob>;
-    isPending: boolean;
-  };
+  const { data: formations = [], isLoading: isLoadingFormations } =
+    useUserFormations() as {
+      data: Array<{
+        id: string;
+        titre: string;
+        dateDebut: string;
+        dateFin: string;
+        statut: string;
+        formateur: { prenom: string; nom: string };
+      }>;
+      isLoading: boolean;
+    };
+  const { data: payments = [], isLoading: isLoadingPayments } =
+    useUserPayments();
+  const { mutate: generateAttestation, isPending: isGeneratingAttestation } =
+    useGenerateAttestationMutation();
 
-  const { data: profile, isLoading } = useProfile() as { data: UserProfile | null; isLoading: boolean };
+  const { data: profile, isLoading } = useProfile() as {
+    data: UserProfile | null;
+    isLoading: boolean;
+  };
 
   const updateProfile = useUpdateProfile();
   const updatePassword = useUpdatePassword();
-  const { mutate: uploadAvatar, isPending } = useUploadAvatar();
 
   const profileForm = useForm({
     initialValues: {
@@ -209,36 +200,6 @@ export function ProfilePage() {
         icon: <IconX size={16} />,
       });
     }
-  };
-
-  const handleAvatarChange = (file: File | null) => {
-    if (!file) return;
-
-    if (file.size > 5 * 1024 * 1024) {
-      notifications.show({
-        title: 'Erreur',
-        message: "La taille de l'image ne doit pas dépasser 5 Mo",
-        color: 'red',
-      });
-      return;
-    }
-
-    uploadAvatar(file, {
-      onSuccess: () => {
-        notifications.show({
-          title: 'Succès',
-          message: 'Photo de profil mise à jour avec succès',
-          color: 'green',
-        });
-      },
-      onError: () => {
-        notifications.show({
-          title: 'Erreur',
-          message: 'Une erreur est survenue lors du téléchargement de la photo',
-          color: 'red',
-        });
-      },
-    });
   };
 
   if (isLoading) {
@@ -332,29 +293,6 @@ export function ProfilePage() {
   return (
     <Container size="md" py="xl">
       <div className={classes.profileHeader}>
-        <div className={classes.avatarWrapper}>
-          <Avatar size={120} radius={60} className={classes.avatar}>
-            <IconUserCircle size={60} />
-          </Avatar>
-
-          <FileButton
-            onChange={handleAvatarChange}
-            accept="image/png,image/jpeg"
-          >
-            {(props) => (
-              <Button
-                {...props}
-                className={classes.changeAvatarBtn}
-                radius="xl"
-                size="xs"
-                loading={isPending}
-              >
-                <IconUpload size={16} />
-              </Button>
-            )}
-          </FileButton>
-        </div>
-
         <Title order={2}>
           {profile.prenom} {profile.nom}
         </Title>
@@ -503,27 +441,25 @@ export function ProfilePage() {
                           <Button
                             leftSection={<IconFileDownload size={16} />}
                             variant="outline"
+                            loading={isGeneratingAttestation}
                             onClick={async () => {
                               try {
-                                const response = await generateAttestation(formation.id);
-                                if (response) {
-                                  const url = window.URL.createObjectURL(new Blob([response]));
-                                  const link = document.createElement('a');
-                                  link.href = url;
-                                  link.setAttribute('download', `attestation-${formation.id}.pdf`);
-                                  document.body.appendChild(link);
-                                  link.click();
-                                  link.remove();
-                                }
+                                await generateAttestation(formation.id);
+                                notifications.show({
+                                  title: 'Succès',
+                                  message:
+                                    'Attestation téléchargée avec succès',
+                                  color: 'green',
+                                });
                               } catch {
                                 notifications.show({
                                   title: 'Erreur',
-                                  message: "Impossible de générer l'attestation",
+                                  message:
+                                    "Erreur lors du téléchargement de l'attestation",
                                   color: 'red',
                                 });
                               }
                             }}
-                            loading={isGeneratingAttestation}
                           >
                             Télécharger l'attestation
                           </Button>
@@ -560,13 +496,13 @@ export function ProfilePage() {
                   <Table.Tbody>
                     {payments?.map((payment) => (
                       <Table.Tr key={payment.id}>
-                        <Table.Td>{payment.formation.titre}</Table.Td>
+                        <Table.Td>{payment.formation?.titre || 'N/A'}</Table.Td>
                         <Table.Td>{formatDate(payment.datePaiement)}</Table.Td>
                         <Table.Td>{formatCurrency(payment.montant)}</Table.Td>
                         <Table.Td>
                           <Badge variant="outline">
                             {payment.methode === 'CARTE'
-                              ? 'Carte bancaire'
+                              ? 'Carte'
                               : payment.methode === 'VIREMENT'
                                 ? 'Virement'
                                 : payment.methode === 'ESPECES'

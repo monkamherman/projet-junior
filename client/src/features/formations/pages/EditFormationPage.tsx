@@ -1,11 +1,11 @@
 'use client';
 
-import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { api } from '@/lib/api';
-import { toast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
+import { toast } from '@/components/ui/use-toast';
+import { api } from '@/lib/api';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { FormationForm } from '../components/formation-form';
 import type { FormationFormValues } from '../schemas/formation.schema';
 
@@ -14,10 +14,14 @@ export default function EditFormationPage() {
   const navigate = useNavigate();
 
   // Récupérer les données de la formation existante
-  const { data: formation, isLoading, error } = useQuery({
+  const {
+    data: formation,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['formation', id],
     queryFn: async () => {
-      const { data } = await api.get(`/formations/${id}`);
+      const { data } = await api.get(`/api/formations/${id}`);
       return data;
     },
     enabled: !!id,
@@ -25,7 +29,7 @@ export default function EditFormationPage() {
 
   const updateFormation = useMutation({
     mutationFn: async (data: FormationFormValues) => {
-      const response = await api.put(`/formations/${id}`, data);
+      const response = await api.put(`/api/formations/${id}`, data);
       return response.data;
     },
     onSuccess: () => {
@@ -38,7 +42,8 @@ export default function EditFormationPage() {
     },
     onError: (error: unknown) => {
       console.error('Erreur lors de la mise à jour de la formation:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Une erreur est survenue';
+      const errorMessage =
+        error instanceof Error ? error.message : 'Une erreur est survenue';
       toast({
         title: 'Erreur',
         description: errorMessage,
@@ -82,8 +87,8 @@ export default function EditFormationPage() {
   return (
     <div className="container mx-auto py-8">
       <div className="mb-6">
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           className="flex items-center gap-2"
           onClick={() => navigate(-1)}
         >
@@ -92,9 +97,9 @@ export default function EditFormationPage() {
         </Button>
       </div>
 
-      <h1 className="text-3xl font-bold mb-6">Modifier la formation</h1>
-      
-      <div className="max-w-3xl mx-auto">
+      <h1 className="mb-6 text-3xl font-bold">Modifier la formation</h1>
+
+      <div className="mx-auto max-w-3xl">
         <FormationForm
           onSubmit={handleSubmit}
           defaultValues={defaultValues}

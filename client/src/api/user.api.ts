@@ -20,22 +20,23 @@ export type UserFilters = {
 
 export const userApi = {
   // Récupérer tous les utilisateurs avec filtres
-  getUsers: (filters?: UserFilters) => 
-    api.get<User[]>('/dashboard/users', { params: filters }),
+  getUsers: (filters?: UserFilters) =>
+    api.get<User[]>('/api/dashboard/users', { params: filters }),
 
   // Récupérer un utilisateur par son ID
-  getUser: (id: string) => 
-    api.get<User>(`/dashboard/users/${id}`),
+  getUser: (id: string) => api.get<User>(`/api/dashboard/users/${id}`),
 
   // Créer un nouvel utilisateur
   createUser: (userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'>) =>
-    api.post<User>('/dashboard/users', userData),
+    api.post<User>('/api/dashboard/users', userData),
 
   // Mettre à jour un utilisateur
-  updateUser: (id: string, userData: Partial<Omit<User, 'id' | 'createdAt' | 'updatedAt'>>) =>
-    api.put<User>(`/dashboard/users/${id}`, userData),
+  updateUser: (
+    id: string,
+    userData: Partial<Omit<User, 'id' | 'createdAt' | 'updatedAt'>>
+  ) => api.put<User>(`/api/dashboard/users/${id}`, userData),
 
   // Supprimer un utilisateur
-  deleteUser: (id: string) => 
-    api.delete<{ success: boolean }>(`/dashboard/users/${id}`),
+  deleteUser: (id: string) =>
+    api.delete<{ success: boolean }>(`/api/dashboard/users/${id}`),
 };

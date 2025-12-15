@@ -2,9 +2,13 @@ import { Router } from "express";
 import * as certificateController from "../controllers/dashboard/certificates";
 import * as formationController from "../controllers/dashboard/formations";
 import * as paymentController from "../controllers/dashboard/payments";
+import * as statsController from "../controllers/dashboard/stats";
 import * as userController from "../controllers/dashboard/users";
 
 const router = Router();
+
+// Routes pour les statistiques du tableau de bord
+router.get("/stats", statsController.getDashboardStats);
 
 // Routes pour la gestion des utilisateurs
 router.get("/users", userController.getAllUsers);

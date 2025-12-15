@@ -1,27 +1,48 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { api } from '@/lib/api';
 import { toast } from '@/components/ui/use-toast';
+import { api } from '@/lib/api';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 export interface Formation {
   id: string;
   titre: string;
   description: string;
+  prix: number;
   dateDebut: string;
   dateFin: string;
-  statut: 'EN_COURS' | 'TERMINE' | 'A_VENIR';
+  statut: 'OUVERTE' | 'EN_COURS' | 'TERMINE' | 'A_VENIR';
+  createdAt: string;
+  updatedAt: string;
+  formateur?: {
+    id: string;
+    nom: string;
+    prenom: string;
+  };
+}
+
+export interface UserFormation extends Formation {
+  dateInscription: string;
   formateur: {
     id: string;
     nom: string;
     prenom: string;
   };
-  dateInscription: string;
+}
+
+export function useFormations() {
+  return useQuery<Formation[]>({
+    queryKey: ['formations'],
+    queryFn: async () => {
+      const { data } = await api.get('/api/formations');
+      return data;
+    },
+  });
 }
 
 export function useUserFormations() {
-  return useQuery<Formation[]>({
+  return useQuery<UserFormation[]>({
     queryKey: ['user-formations'],
     queryFn: async () => {
-      const { data } = await api.get('/formations/mes-formations');
+      const { data } = await api.get('/api/formations/mes-formations');
       return data;
     },
   });
@@ -31,10 +52,13 @@ export function useGenerateAttestation(formationId: string) {
   return useQuery({
     queryKey: ['attestation', formationId],
     queryFn: async () => {
-      const response = await api.get(`/formations/${formationId}/attestation`, {
-        responseType: 'blob',
-      });
-      
+      const response = await api.get(
+        `/api/formations/${formationId}/attestation`,
+        {
+          responseType: 'blob',
+        }
+      );
+
       // Créer une URL pour le fichier PDF
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
@@ -43,19 +67,46 @@ export function useGenerateAttestation(formationId: string) {
       document.body.appendChild(link);
       link.click();
       link.remove();
-      
+
       return url;
     },
     enabled: false, // Ne pas exécuter automatiquement
   });
 }
 
+export function useGenerateAttestationMutation() {
+  return useMutation({
+    mutationFn: async (formationId: string) => {
+      const response = await api.get(
+        `/api/formations/${formationId}/attestation`,
+        {
+          responseType: 'blob',
+        }
+      );
+
+      // Créer une URL pour le fichier PDF
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `attestation-formation-${formationId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      return url;
+    },
+  });
+}
+
 export function useUpdateFormation() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
-    mutationFn: async ({ id, ...data }: { id: string } & Partial<Formation>) => {
-      const response = await api.put(`/formations/${id}`, data);
+    mutationFn: async ({
+      id,
+      ...data
+    }: { id: string } & Partial<Formation>) => {
+      const response = await api.put(`/api/formations/${id}`, data);
       return response.data;
     },
     onSuccess: () => {
@@ -66,7 +117,7 @@ export function useUpdateFormation() {
         variant: 'default',
       });
     },
-    onError: (error: any) => {
+    onError: (error: { response?: { data?: { message?: string } } }) => {
       toast({
         title: 'Erreur',
         description: error.response?.data?.message || 'Une erreur est survenue',
@@ -78,10 +129,10 @@ export function useUpdateFormation() {
 
 export function useDeleteFormation() {
   const queryClient = useQueryClient();
-  
+
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.delete(`/formations/${id}`);
+      const response = await api.delete(`/api/formations/${id}`);
       return response.data;
     },
     onSuccess: () => {
@@ -92,7 +143,7 @@ export function useDeleteFormation() {
         variant: 'default',
       });
     },
-    onError: (error: any) => {
+    onError: (error: { response?: { data?: { message?: string } } }) => {
       toast({
         title: 'Erreur',
         description: error.response?.data?.message || 'Une erreur est survenue',

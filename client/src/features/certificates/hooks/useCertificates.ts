@@ -29,7 +29,7 @@ export const useCertificates = (filters = {}) => {
   return useQuery({
     queryKey: [CERTIFICATES_QUERY_KEY, filters],
     queryFn: () =>
-      apiGet<Certificate[]>('/dashboard/certificates', { params: filters }),
+      apiGet<Certificate[]>('/api/dashboard/certificates', { params: filters }),
   });
 };
 
@@ -38,7 +38,7 @@ export const useGenerateCertificate = () => {
 
   return useMutation({
     mutationFn: (inscriptionId: string) =>
-      apiPost<Certificate>('/dashboard/certificates/generate', {
+      apiPost<Certificate>('/api/dashboard/certificates/generate', {
         inscriptionId,
       }),
     onSuccess: () => {
@@ -52,7 +52,7 @@ export const useSendCertificate = () => {
 
   return useMutation({
     mutationFn: (certificateId: string) =>
-      apiPost(`/dashboard/certificates/${certificateId}/send`),
+      apiPost(`/api/dashboard/certificates/${certificateId}/send`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [CERTIFICATES_QUERY_KEY] });
     },
