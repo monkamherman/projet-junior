@@ -5,17 +5,22 @@ import axios from 'axios';
 // Configuration de base
 const BASE_URL = import.meta.env.VITE_API_URL || '';
 
-console.log('Configuration de l\'API - URL de base:', BASE_URL, '(Mode:', import.meta.env.MODE + ')');
+console.log(
+  "Configuration de l'API - URL de base:",
+  BASE_URL,
+  '(Mode:',
+  import.meta.env.MODE + ')'
+);
 
 // Configuration axios par défaut
 export const axiosInstance = axios.create({
   baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json',
+    Accept: 'application/json',
   },
-  withCredentials: true,
-  timeout: 10000, // 10 secondes de timeout
+  withCredentials: import.meta.env.DEV, // Seulement en développement local
+  timeout: 30000, // 30 secondes pour gérer les cold starts de Render
 });
 
 // Intercepteur pour ajouter le token d'authentification
@@ -33,13 +38,36 @@ axiosInstance.interceptors.request.use(
   }
 );
 
-// Intercepteur pour gérer les erreurs 401
+// Intercepteur pour gérer les erreurs 401 et les timeouts
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean;
+      _retryCount?: number;
     };
+
+    // Gestion des timeouts et erreurs de réseau (cold starts Render)
+    if (
+      (error.code === 'ECONNABORTED' ||
+        error.code === 'ECONNRESET' ||
+        error.message?.includes('timeout')) &&
+      originalRequest &&
+      !originalRequest._retry &&
+      (originalRequest._retryCount || 0) < 2
+    ) {
+      originalRequest._retry = true;
+      originalRequest._retryCount = (originalRequest._retryCount || 0) + 1;
+
+      console.log(
+        `Tentative de retry ${originalRequest._retryCount}/2 pour l'URL: ${originalRequest.url}`
+      );
+
+      // Attendre un peu avant de retryer (pour le cold start)
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      return axiosInstance(originalRequest);
+    }
 
     if (
       error.response?.status === 401 &&
