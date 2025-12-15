@@ -70,6 +70,11 @@ const RouterInstance = createBrowserRouter([
         path: 'mes-attestations',
         element: <MesAttestationsPage />,
       },
+      // Redirection des formations vers le dashboard
+      {
+        path: 'formations',
+        element: <DynamicPageLoader pageKey="FormationsPage" />,
+      },
       // Public catch-all -> 404
       { path: '*', element: <DynamicPageLoader pageKey="error/PageError" /> },
     ],

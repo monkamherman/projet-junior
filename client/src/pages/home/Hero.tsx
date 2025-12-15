@@ -6,18 +6,18 @@ const Hero: React.FC = () => {
       <section className="relative z-10 flex flex-col items-center bg-black/50 bg-[url('/img1.jpg')] bg-cover bg-center px-6 py-24 text-center md:py-40">
         <div className="h-screen-1/2 w-full bg-black/50 p-2">
           <p className="font-semibold uppercase tracking-wide text-blue-400">
-            Technology Related Consultancy
+            Conseil en Technologies
           </p>
 
           <h1 className="mt-4 text-4xl font-bold leading-tight text-white md:text-6xl">
-            We Convert Concepts <br /> Into Technology
+            Nous Transformons les Concepts <br /> En Technologie
           </h1>
 
           {/* <p className="mt-6 max-w-2xl tracking-wide text-gray-300">
             Consectetur adipiscing elit. Aenean scelerisque augue eu mauris
           </p> */}
           <button className="mt-8 rounded-lg bg-blue-600 px-6 py-3 font-semibold transition hover:bg-blue-700">
-            Explore More
+            Explorer Plus
           </button>
         </div>
 

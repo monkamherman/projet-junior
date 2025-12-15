@@ -1,5 +1,5 @@
-import React from "react";
-import { Database, Headset, Smartphone } from "lucide-react";
+import { Database, Headset, Smartphone } from 'lucide-react';
+import React from 'react';
 
 type Service = {
   title: string;
@@ -11,70 +11,72 @@ type Service = {
 
 const services: Service[] = [
   {
-    title: "Database Security",
+    title: 'Sécurité des Bases de Données',
     description:
-      "Refine designs and the content you use to provide digital solutions.",
-    icon: <Database className="w-6 h-6 text-blue-600" />,
-    image: "/img1.jpg", // à remplacer par ton image
-    link: "#",
+      'Affinons les designs et le contenu que vous utilisez pour fournir des solutions numériques.',
+    icon: <Database className="h-6 w-6 text-blue-600" />,
+    image: '/img1.jpg', // à remplacer par ton image
+    link: '#',
   },
   {
-    title: "IT Consultancy",
+    title: 'Conseil IT',
     description:
-      "Professional advice on infrastructure and system integration.",
-    icon: <Headset className="w-6 h-6 text-blue-600" />,
-    image: "/etudiante.jpg",
-    link: "#",
+      "Conseils professionnels sur l'infrastructure et l'intégration des systèmes.",
+    icon: <Headset className="h-6 w-6 text-blue-600" />,
+    image: '/etudiante.jpg',
+    link: '#',
   },
   {
-    title: "App Development",
+    title: "Développement d'Applications",
     description:
-      "We build scalable web and mobile apps for modern businesses.",
-    icon: <Smartphone className="w-6 h-6 text-blue-600" />,
-    image: "/img3.jpg",
-    link: "#",
+      'Nous créons des applications web et mobiles évolutives pour les entreprises modernes.',
+    icon: <Smartphone className="h-6 w-6 text-blue-600" />,
+    image: '/img3.jpg',
+    link: '#',
   },
 ];
 
 const ServicesSection: React.FC = () => {
   return (
-    <section className="bg-gray-900 text-white px-6 md:px-16 py-20">
+    <section className="bg-gray-900 px-6 py-20 text-white md:px-16">
       {/* Section header */}
       <div className="mb-12">
-        <p className="text-blue-400 uppercase tracking-wide font-semibold text-sm">
-          IT Services We’re Offering
+        <p className="text-sm font-semibold uppercase tracking-wide text-blue-400">
+          Services IT que Nous Offrons
         </p>
-        <h2 className="text-3xl md:text-4xl font-bold">Exclusive IT Services</h2>
+        <h2 className="text-3xl font-bold md:text-4xl">
+          Services IT Exclusifs
+        </h2>
       </div>
 
       {/* Services cards */}
-      <div className="grid md:grid-cols-3 gap-8">
+      <div className="grid gap-8 md:grid-cols-3">
         {services.map((service, index) => (
           <div
             key={index}
-            className="bg-white text-gray-900 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition"
+            className="overflow-hidden rounded-2xl bg-white text-gray-900 shadow-lg transition hover:shadow-2xl"
           >
             {/* Image */}
             <div className="relative">
               <img
                 src={service.image}
                 alt={service.title}
-                className="w-full h-48 object-cover"
+                className="h-48 w-full object-cover"
               />
-              <div className="absolute top-4 left-4 bg-white p-2 rounded-lg shadow">
+              <div className="absolute left-4 top-4 rounded-lg bg-white p-2 shadow">
                 {service.icon}
               </div>
             </div>
 
             {/* Content */}
             <div className="p-6">
-              <h3 className="text-xl font-semibold mb-2">{service.title}</h3>
-              <p className="text-gray-600 mb-4">{service.description}</p>
+              <h3 className="mb-2 text-xl font-semibold">{service.title}</h3>
+              <p className="mb-4 text-gray-600">{service.description}</p>
               <a
                 href={service.link}
-                className="text-blue-600 font-medium hover:underline"
+                className="font-medium text-blue-600 hover:underline"
               >
-                Read More →
+                Lire Plus →
               </a>
             </div>
           </div>

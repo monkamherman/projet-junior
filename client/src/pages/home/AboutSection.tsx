@@ -1,42 +1,43 @@
-import React from "react";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle } from 'lucide-react';
+import React from 'react';
 
 const AboutSection: React.FC = () => {
   return (
-    <section className="grid md:grid-cols-2 gap-10 items-center px-6 md:px-16 py-20">
+    <section className="grid items-center gap-10 px-6 py-20 md:grid-cols-2 md:px-16">
       {/* Left - Image Section */}
       <div className="relative">
         <img
-          src="/img3.jpg" 
+          src="/img3.jpg"
           alt="Business professional"
           className="rounded-2xl shadow-lg"
         />
         <img
           src="/etudiante.jpg"
           alt="Team working"
-          className="absolute bottom-[-40px] left-10 w-1/2 rounded-xl shadow-md border-4 border-white"
+          className="absolute bottom-[-40px] left-10 w-1/2 rounded-xl border-4 border-white shadow-md"
         />
       </div>
 
       {/* Right - Content Section */}
       <div className="space-y-6">
-        <p className="text-blue-600 uppercase font-semibold tracking-wide">
-          Who We Are
+        <p className="font-semibold uppercase tracking-wide text-blue-600">
+          Qui Nous Sommes
         </p>
-        <h2 className="text-3xl md:text-4xl font-bold leading-snug">
-          Ensuring Your Success Through <br /> Reliable IT Solutions
+        <h2 className="text-3xl font-bold leading-snug md:text-4xl">
+          Assurer Votre Réussite Avec des <br /> Solutions IT Fiables
         </h2>
-        <p className="text-gray-600 leading-relaxed">
-          Far far away, behind the word mountains, far from the countries Vokalia
-          and Consonantia, there live the blind texts. Separated they live in
-          Bookmarksgrove right at the coast of the Semantics.
+        <p className="leading-relaxed text-gray-600">
+          Nous sommes une organisation dédiée à la formation des jeunes dans le
+          domaine des technologies de l'information. Notre mission est de
+          fournir des compétences pratiques et pertinentes pour préparer la
+          prochaine génération de professionnels du numérique.
         </p>
 
         {/* Features List */}
         <div className="grid grid-cols-2 gap-4">
           <div className="flex items-center gap-2">
             <CheckCircle className="text-blue-600" size={20} />
-            <span>Technology Consultancy</span>
+            <span>Conseil Technologique</span>
           </div>
           <div className="flex items-center gap-2">
             <CheckCircle className="text-blue-600" size={20} />
@@ -44,20 +45,20 @@ const AboutSection: React.FC = () => {
           </div>
           <div className="flex items-center gap-2">
             <CheckCircle className="text-blue-600" size={20} />
-            <span>Web & Mobile Services</span>
+            <span>Services Web & Mobile</span>
           </div>
           <div className="flex items-center gap-2">
             <CheckCircle className="text-blue-600" size={20} />
-            <span>Requirements Gathering</span>
+            <span>Collecte des Besoins</span>
           </div>
         </div>
 
         {/* CTA + Signature */}
-        <div className="flex items-center gap-8 mt-6">
-          <button className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition">
-            About Us
+        <div className="mt-6 flex items-center gap-8">
+          <button className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700">
+            À Propos
           </button>
-          <span className="italic text-2xl font-signature">Signature</span>
+          <span className="font-signature text-2xl italic">Signature</span>
         </div>
       </div>
     </section>

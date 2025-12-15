@@ -1,4 +1,6 @@
 // import SEO from '@/components/ui/SEO'
+import StatsSection from '@/components/home/StatsSection';
+import TeamSection from '@/components/home/TeamSection';
 import React from 'react';
 import AboutSection from './AboutSection';
 import Hero from './Hero';
@@ -16,6 +18,10 @@ const Home: React.FC = () => {
       <Hero />
 
       <AboutSection />
+
+      <StatsSection />
+
+      <TeamSection />
 
       <ServicesSection />
     </>
