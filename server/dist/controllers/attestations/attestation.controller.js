@@ -1,7 +1,11 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.telechargerMonAttestation = exports.genererMonAttestation = exports.verifierEligibiliteAttestation = exports.getMesAttestations = void 0;
 const client_1 = require("@prisma/client");
+const sendmail_1 = __importDefault(require("../../nodemailer/sendmail"));
 const certificateService_1 = require("../../services/certificateService");
 const prisma = new client_1.PrismaClient();
 const getMesAttestations = async (req, res) => {
@@ -187,6 +191,36 @@ const genererMonAttestation = async (req, res) => {
                 },
             },
         });
+        // Envoyer l'email de notification
+        try {
+            const emailContent = `
+Cher/Chère ${inscription.utilisateur.prenom} ${inscription.utilisateur.nom},
+
+Félicitations ! Votre attestation de formation a été générée avec succès.
+
+Détails de l'attestation :
+- Numéro : ${attestation.numero}
+- Formation : ${inscription.formation.titre}
+- Date d'émission : ${attestation.dateEmission.toLocaleDateString("fr-FR")}
+- URL du PDF : ${attestation.urlPdf}
+
+Vous pouvez télécharger votre attestation directement depuis votre espace personnel.
+
+Cordialement,
+L'équipe Centic
+      `;
+            const emailResult = await (0, sendmail_1.default)(inscription.utilisateur.email, emailContent);
+            if (emailResult.success) {
+                console.log(`Email d'attestation envoyé avec succès à ${inscription.utilisateur.email}`);
+            }
+            else {
+                console.error(`Erreur lors de l'envoi de l'email à ${inscription.utilisateur.email}:`, emailResult.error);
+            }
+        }
+        catch (emailError) {
+            console.error("Erreur lors de l'envoi de l'email d'attestation:", emailError);
+            // Ne pas bloquer la réponse si l'email échoue
+        }
         res.status(201).json({
             message: "Attestation générée avec succès",
             attestation,

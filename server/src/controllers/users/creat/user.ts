@@ -1,7 +1,7 @@
 import { PrismaClient, Utilisateur } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { Request, Response } from "express";
-import { AuthenticatedUser } from "../../middlewares/auth.middleware";
+import { AuthenticatedUser } from "../../../middlewares/auth.middleware";
 
 interface AuthenticatedRequest extends Request {
   user?: AuthenticatedUser;
@@ -80,15 +80,19 @@ export async function getProfile(req: AuthenticatedRequest, res: Response) {
         utilisateurId: req.user.id,
       },
       include: {
-        formation: true,
+        inscription: {
+          include: {
+            formation: true,
+          },
+        },
       },
     });
 
     // Transformer les attestations
     const attestationsFormatted = attestations.map((attestation) => ({
       id: attestation.id,
-      titre: `Attestation - ${attestation.formation.titre}`,
-      formation: attestation.formation.titre,
+      titre: `Attestation - ${attestation.inscription.formation.titre}`,
+      formation: attestation.inscription.formation.titre,
       dateDelivrance: attestation.dateEmission,
     }));
 

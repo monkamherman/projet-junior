@@ -1,6 +1,7 @@
 import type { FormationFormValues } from '../schemas/formation.schema';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+const API_URL =
+  import.meta.env.VITE_API_URL || 'https://projet-junior-api.onrender.com';
 
 interface ApiError extends Error {
   validationErrors?: Record<string, string>;

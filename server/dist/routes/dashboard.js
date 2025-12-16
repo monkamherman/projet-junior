@@ -27,8 +27,11 @@ const express_1 = require("express");
 const certificateController = __importStar(require("../controllers/dashboard/certificates"));
 const formationController = __importStar(require("../controllers/dashboard/formations"));
 const paymentController = __importStar(require("../controllers/dashboard/payments"));
+const statsController = __importStar(require("../controllers/dashboard/stats"));
 const userController = __importStar(require("../controllers/dashboard/users"));
 const router = (0, express_1.Router)();
+// Routes pour les statistiques du tableau de bord
+router.get("/stats", statsController.getDashboardStats);
 // Routes pour la gestion des utilisateurs
 router.get("/users", userController.getAllUsers);
 router.get("/users/:id", userController.getUserById);

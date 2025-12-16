@@ -6,11 +6,14 @@ const auth_middleware_1 = require("../middlewares/auth.middleware");
 const router = (0, express_1.Router)();
 // Routes publiques
 router.get("/", formation_1.getFormations);
-router.get("/:id", formation_1.getFormationById);
+router.get("/public", formation_1.getFormations); // Endpoint public pour le frontend
 // Routes protégées par authentification
 router.get("/mes-formations", auth_middleware_1.authMiddleware, formation_1.getUserFormations);
 router.post("/", auth_middleware_1.authMiddleware, formation_1.createFormation);
 router.put("/:id", auth_middleware_1.authMiddleware, formation_1.updateFormation);
 router.delete("/:id", auth_middleware_1.authMiddleware, formation_1.deleteFormation);
+// Routes publiques (avec paramètre)
+router.get("/:id", formation_1.getFormationById);
+router.get("/:id/public", formation_1.getFormationById); // Endpoint public pour le frontend
 exports.default = router;
 //# sourceMappingURL=formation.routes.js.map

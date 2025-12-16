@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,9 +43,11 @@ export function UserAvatar({ className = '' }: UserAvatarProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className={`relative h-8 w-8 rounded-full ${className}`}>
+        <Button
+          variant="ghost"
+          className={`relative h-8 w-8 rounded-full ${className}`}
+        >
           <Avatar className="h-8 w-8">
-            <AvatarImage src="/avatars/default-avatar.png" alt={user.email} />
             <AvatarFallback>
               {getInitials(user.prenom, user.nom)}
             </AvatarFallback>

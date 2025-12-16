@@ -24,8 +24,8 @@ exports.envs = {
     MONGO_DB_NAME: (0, env_var_1.get)("MONGO_DB_NAME").required().asString(),
     MONGO_HOST: (0, env_var_1.get)("MONGO_HOST").default("localhost").asString(),
     MONGO_PORT: (0, env_var_1.get)("MONGO_PORT").default("27017").asString(),
-    mot_de_passe: "ybfm tkhc pyaa bmuy",
-    address_mail: "cesaristos85@gmail.com",
+    mot_de_passe: (0, env_var_1.get)("SMTP_PASS").default("ybfm tkhc pyaa bmuy").asString(),
+    address_mail: (0, env_var_1.get)("SMTP_USER").default("cesaristos85@gmail.com").asString(),
 };
 exports.CONNECTION_STRING = `mongodb://${exports.envs.MONGO_INITDB_ROOT_USERNAME}:${exports.envs.MONGO_INITDB_ROOT_PASSWORD}@${exports.envs.MONGO_HOST}:${exports.envs.MONGO_PORT}/${exports.envs.MONGO_DB_NAME}?authSource=admin`;
 //# sourceMappingURL=env.js.map

@@ -10,7 +10,17 @@ const client_1 = require("@prisma/client");
 const prisma = new client_1.PrismaClient();
 async function getFormations(req, res) {
     try {
-        const formations = await prisma.formation.findMany();
+        const formations = await prisma.formation.findMany({
+            include: {
+                formateur: {
+                    select: {
+                        id: true,
+                        nom: true,
+                        prenom: true,
+                    },
+                },
+            },
+        });
         res.json(formations);
     }
     catch (error) {
@@ -57,10 +67,14 @@ async function getUserFormations(req, res) {
         if (!req.user) {
             return res.status(401).json({ message: "Non autorisé." });
         }
-        // Première requête pour obtenir les inscriptions de l'utilisateur
+        // Récupérer les inscriptions de l'utilisateur avec un paiement validé
         const inscriptions = await prisma.inscription.findMany({
             where: {
                 utilisateurId: req.user.id,
+                statut: "VALIDEE", // Uniquement les inscriptions validées
+                paiement: {
+                    statut: "VALIDE", // Uniquement les paiements validés
+                },
             },
             include: {
                 formation: {
@@ -74,12 +88,15 @@ async function getUserFormations(req, res) {
                         },
                     },
                 },
+                paiement: true, // Inclure les informations de paiement
             },
         });
         // Transformer les données pour correspondre au format attendu
         const formations = inscriptions.map((inscription) => ({
             ...inscription.formation,
             dateInscription: inscription.dateInscription.toISOString(),
+            statutPaiement: inscription.paiement?.statut || "EN_ATTENTE",
+            montantPaiement: inscription.paiement?.montant || 0,
         }));
         res.json(formations);
     }

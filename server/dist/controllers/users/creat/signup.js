@@ -13,28 +13,22 @@ const sendmail_1 = __importDefault(require("../../../nodemailer/sendmail"));
 const prisma = new client_1.PrismaClient();
 // Fonction pour valider la force du mot de passe
 const validatePassword = (password) => {
-    if (password.length < 8) {
+    if (password.length < 6) {
         return {
             valid: false,
-            message: "Le mot de passe doit contenir au moins 8 caractères",
+            message: "Le mot de passe doit contenir au moins 6 caractères",
         };
     }
-    if (!/[A-Z]/.test(password)) {
+    // Compter les types de caractères présents
+    const hasLower = /[a-z]/.test(password);
+    const hasUpper = /[A-Z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecial = /[^A-Za-z0-9]/.test(password);
+    const typeCount = [hasLower, hasUpper, hasNumber, hasSpecial].filter(Boolean).length;
+    if (typeCount < 2) {
         return {
             valid: false,
-            message: "Le mot de passe doit contenir au moins une majuscule",
-        };
-    }
-    if (!/[0-9]/.test(password)) {
-        return {
-            valid: false,
-            message: "Le mot de passe doit contenir au moins un chiffre",
-        };
-    }
-    if (!/[^A-Za-z0-9]/.test(password)) {
-        return {
-            valid: false,
-            message: "Le mot de passe doit contenir au moins un caractère spécial",
+            message: "Le mot de passe doit contenir au moins deux types de caractères différents (lettres, chiffres, majuscules ou caractères spéciaux)",
         };
     }
     return { valid: true };
@@ -57,9 +51,9 @@ const signupSchema = zod_1.z.object({
         .max(100, "L'email ne peut pas dépasser 100 caractères"),
     motDePasse: zod_1.z
         .string()
-        .min(8, "Le mot de passe doit contenir au moins 8 caractères")
+        .min(6, "Le mot de passe doit contenir au moins 6 caractères")
         .refine((val) => validatePassword(val).valid, {
-        message: "Le mot de passe doit contenir au moins une majuscule, un chiffre et un caractère spécial",
+        message: "Le mot de passe doit contenir au moins deux types de caractères différents",
     }),
     telephone: zod_1.z
         .string()
@@ -87,9 +81,9 @@ const sendOtpSchema = zod_1.z.object({
         .optional(),
     motDePasse: zod_1.z
         .string()
-        .min(8, "Le mot de passe doit contenir au moins 8 caractères")
+        .min(6, "Le mot de passe doit contenir au moins 6 caractères")
         .refine((val) => validatePassword(val).valid, {
-        message: "Le mot de passe doit contenir au moins une majuscule, un chiffre et un caractère spécial",
+        message: "Le mot de passe doit contenir au moins deux types de caractères différents",
     }),
 });
 // Fonction pour générer un OTP à 6 chiffres

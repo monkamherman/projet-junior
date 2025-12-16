@@ -12,7 +12,9 @@ export default function registerRoutes(app: express.Application) {
   app.use("/api/user", userRoute);
   app.use("/api/formations", formationRoutes);
   app.use("/api/dashboard", dashboardRoutes);
-  app.use("/api/attestations", attestationsRoutes);
-  app.use("/api/attestations", attestationsPublicRoutes);
   app.use("/api/paiements", paiementRoutes);
+  // Routes attestations publiques d'abord
+  app.use("/api/attestations", attestationsPublicRoutes);
+  // Routes attestations protégées ensuite
+  app.use("/api/attestations", attestationsRoutes);
 }
