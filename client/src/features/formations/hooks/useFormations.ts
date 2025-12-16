@@ -32,7 +32,7 @@ export function useFormations() {
   return useQuery<Formation[]>({
     queryKey: ['formations'],
     queryFn: async () => {
-      const { data } = await api.get('/api/formations');
+      const { data } = await api.get('/api/formations/public');
       return data;
     },
   });

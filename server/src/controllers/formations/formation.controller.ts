@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 // Simulation de paiement
 export async function simulatePayment(req: Request, res: Response) {
-  const { formationId, userId, montant, methode } = req.body;
+  const { formationId, userId, montant } = req.body;
 
   try {
     // Vérifier si la formation existe

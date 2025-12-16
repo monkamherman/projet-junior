@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   generateAttestation,
   getAllFormations,
@@ -342,6 +343,7 @@ export default function FormationsPage() {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { id } = useParams();
+  const { user } = useAuth();
 
   const loadFormations = useCallback(async () => {
     try {
@@ -480,8 +482,13 @@ Module 5: Projet Final
 
   const handlePayment = async (formation: Formation) => {
     try {
-      // Simulation de paiement
-      const userId = 'user-demo'; // Récupérer depuis le contexte utilisateur
+      // Vérifier si l'utilisateur est connecté
+      if (!user) {
+        setError('Vous devez être connecté pour effectuer un paiement.');
+        return;
+      }
+
+      const userId = user.id;
       const paymentResult = await simulatePayment(formation.id, userId);
 
       // Si le paiement est réussi, générer l'attestation

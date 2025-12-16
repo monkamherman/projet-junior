@@ -15,7 +15,7 @@ const services: Service[] = [
     description:
       'Affinons les designs et le contenu que vous utilisez pour fournir des solutions numériques.',
     icon: <Database className="h-6 w-6 text-blue-600" />,
-    image: '/img1.jpg', // à remplacer par ton image
+    image: '/gallerie/1.jpg', // à remplacer par ton image
     link: '#',
   },
   {
@@ -23,7 +23,7 @@ const services: Service[] = [
     description:
       "Conseils professionnels sur l'infrastructure et l'intégration des systèmes.",
     icon: <Headset className="h-6 w-6 text-blue-600" />,
-    image: '/etudiante.jpg',
+    image: '/gallerie/3.jpg',
     link: '#',
   },
   {
@@ -31,7 +31,7 @@ const services: Service[] = [
     description:
       'Nous créons des applications web et mobiles évolutives pour les entreprises modernes.',
     icon: <Smartphone className="h-6 w-6 text-blue-600" />,
-    image: '/img3.jpg',
+    image: '/gallerie/2.jpg',
     link: '#',
   },
 ];

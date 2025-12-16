@@ -7,12 +7,12 @@ const AboutSection: React.FC = () => {
       {/* Left - Image Section */}
       <div className="relative">
         <img
-          src="/img3.jpg"
+          src="/gallerie/4.jpg"
           alt="Business professional"
           className="rounded-2xl shadow-lg"
         />
         <img
-          src="/etudiante.jpg"
+          src="/gallerie/1.jpg"
           alt="Team working"
           className="absolute bottom-[-40px] left-10 w-1/2 rounded-xl border-4 border-white shadow-md"
         />

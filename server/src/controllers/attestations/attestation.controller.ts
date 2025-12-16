@@ -1,13 +1,11 @@
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
+import sendMail from "../../nodemailer/sendmail";
 import { generateCertificate } from "../../services/certificateService";
 
 const prisma = new PrismaClient();
 
-export const getMesAttestations = async (
-  req: Request,
-  res: Response
-) => {
+export const getMesAttestations = async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ message: "Non autorisé" });
@@ -138,10 +136,7 @@ export const verifierEligibiliteAttestation = async (
 /**
  * Générer une attestation pour l'utilisateur connecté
  */
-export const genererMonAttestation = async (
-  req: Request,
-  res: Response
-) => {
+export const genererMonAttestation = async (req: Request, res: Response) => {
   try {
     if (!req.user) {
       return res.status(401).json({ message: "Non autorisé" });
@@ -215,6 +210,48 @@ export const genererMonAttestation = async (
         },
       },
     });
+
+    // Envoyer l'email de notification
+    try {
+      const emailContent = `
+Cher/Chère ${inscription.utilisateur.prenom} ${inscription.utilisateur.nom},
+
+Félicitations ! Votre attestation de formation a été générée avec succès.
+
+Détails de l'attestation :
+- Numéro : ${attestation.numero}
+- Formation : ${inscription.formation.titre}
+- Date d'émission : ${attestation.dateEmission.toLocaleDateString("fr-FR")}
+- URL du PDF : ${attestation.urlPdf}
+
+Vous pouvez télécharger votre attestation directement depuis votre espace personnel.
+
+Cordialement,
+L'équipe Centic
+      `;
+
+      const emailResult = await sendMail(
+        inscription.utilisateur.email,
+        emailContent
+      );
+
+      if (emailResult.success) {
+        console.log(
+          `Email d'attestation envoyé avec succès à ${inscription.utilisateur.email}`
+        );
+      } else {
+        console.error(
+          `Erreur lors de l'envoi de l'email à ${inscription.utilisateur.email}:`,
+          emailResult.error
+        );
+      }
+    } catch (emailError) {
+      console.error(
+        "Erreur lors de l'envoi de l'email d'attestation:",
+        emailError
+      );
+      // Ne pas bloquer la réponse si l'email échoue
+    }
 
     res.status(201).json({
       message: "Attestation générée avec succès",

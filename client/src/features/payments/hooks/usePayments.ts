@@ -1,5 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { useQuery } from '@tanstack/react-query';
 
 export interface Payment {
   id: string;
@@ -18,7 +18,7 @@ export function useUserPayments() {
   return useQuery<Payment[]>({
     queryKey: ['user-payments'],
     queryFn: async () => {
-      const { data } = await api.get('/api/payments/mes-paiements');
+      const { data } = await api.get('/api/paiements/mes-paiements');
       return data;
     },
   });
@@ -28,7 +28,7 @@ export function usePaymentDetails(paymentId: string) {
   return useQuery<Payment>({
     queryKey: ['payment', paymentId],
     queryFn: async () => {
-      const { data } = await api.get(`/api/payments/${paymentId}`);
+      const { data } = await api.get(`/api/paiements/${paymentId}`);
       return data;
     },
     enabled: !!paymentId,

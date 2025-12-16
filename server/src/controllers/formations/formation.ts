@@ -93,10 +93,14 @@ export async function getUserFormations(
       return res.status(401).json({ message: "Non autorisé." });
     }
 
-    // Première requête pour obtenir les inscriptions de l'utilisateur
+    // Récupérer les inscriptions de l'utilisateur avec un paiement validé
     const inscriptions = await prisma.inscription.findMany({
       where: {
         utilisateurId: req.user.id,
+        statut: "VALIDEE", // Uniquement les inscriptions validées
+        paiement: {
+          statut: "VALIDE", // Uniquement les paiements validés
+        },
       },
       include: {
         formation: {
@@ -110,6 +114,7 @@ export async function getUserFormations(
             },
           },
         },
+        paiement: true, // Inclure les informations de paiement
       },
     });
 
@@ -118,6 +123,8 @@ export async function getUserFormations(
       (inscription) => ({
         ...inscription.formation,
         dateInscription: inscription.dateInscription.toISOString(),
+        statutPaiement: inscription.paiement?.statut || "EN_ATTENTE",
+        montantPaiement: inscription.paiement?.montant || 0,
       })
     );
 

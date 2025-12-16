@@ -36,9 +36,6 @@ const Header: React.FC = () => {
           <Link to="/formations" className="transition hover:text-blue-400">
             Formations
           </Link>
-          <Link to="/apprenants" className="transition hover:text-blue-400">
-            Apprenants
-          </Link>
         </nav>
 
         <div className="flex items-center gap-4">
@@ -65,9 +62,6 @@ const Header: React.FC = () => {
         </Link>
         <Link to="/formations" className="transition hover:text-blue-400">
           Formations
-        </Link>
-        <Link to="/apprenants" className="transition hover:text-blue-400">
-          Apprenants
         </Link>
       </nav>
     </header>

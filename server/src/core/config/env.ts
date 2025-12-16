@@ -21,8 +21,8 @@ export const envs = {
   MONGO_HOST: get("MONGO_HOST").default("localhost").asString(),
   MONGO_PORT: get("MONGO_PORT").default("27017").asString(),
 
-  mot_de_passe: "ybfm tkhc pyaa bmuy",
-  address_mail: "cesaristos85@gmail.com",
+  mot_de_passe: get("SMTP_PASS").default("ybfm tkhc pyaa bmuy").asString(),
+  address_mail: get("SMTP_USER").default("cesaristos85@gmail.com").asString(),
 };
 
 export const CONNECTION_STRING = `mongodb://${envs.MONGO_INITDB_ROOT_USERNAME}:${envs.MONGO_INITDB_ROOT_PASSWORD}@${envs.MONGO_HOST}:${envs.MONGO_PORT}/${envs.MONGO_DB_NAME}?authSource=admin`;

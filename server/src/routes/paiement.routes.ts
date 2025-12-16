@@ -18,10 +18,13 @@ router.use(authMiddleware);
 // Créer un nouveau paiement
 router.post("/", creerPaiement);
 
-// Obtenir le statut d'un paiement
-router.get("/:reference", getStatutPaiement);
-
 // Lister les paiements de l'utilisateur connecté
 router.get("/", listerPaiementsUtilisateur);
+
+// Route spécifique pour le frontend - mes paiements
+router.get("/mes-paiements", listerPaiementsUtilisateur);
+
+// Obtenir le statut d'un paiement
+router.get("/:reference", getStatutPaiement);
 
 export default router;

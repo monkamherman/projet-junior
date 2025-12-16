@@ -1,12 +1,12 @@
-import React from 'react';
-import { RouterProvider } from 'react-router-dom';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { router } from '@/routes/routes';
 import { MantineProvider } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { router } from '@/routes/routes';
+import React from 'react';
+import { RouterProvider } from 'react-router-dom';
 import { theme } from './theme';
-import { AuthProvider } from '@/contexts/AuthContext';
 
 // Créer un client React Query
 const queryClient = new QueryClient({

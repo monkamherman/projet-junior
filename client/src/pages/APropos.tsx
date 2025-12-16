@@ -76,11 +76,27 @@ const APropos: React.FC = () => {
       reverse: false,
     },
     {
+      title: 'Organisation de CENTIC',
+      icon: (
+        <FaBriefcase style={{ fontSize: 50, color: theme.colors.primary }} />
+      ),
+      content: {
+        president: 'Président Fondateur : FALANG MOUYEBE Emmanuel',
+        secretaire: 'Secrétaire Général',
+        tresorier: 'Trésorier',
+        technique: 'Cellule Technique et Pédagogique',
+        communication:
+          'Cellule Communication et Partenariats : Mr Banfack Ngueisop Arcel',
+      },
+      image: '/gallerie/4.jpg',
+      reverse: true,
+    },
+    {
       title: 'Notre Vision',
       icon: <FaUsers style={{ fontSize: 50, color: theme.colors.primary }} />,
       content:
         "Notre vision est de créer un écosystème numérique dynamique dans la région du Septentrion, où chaque jeune, quelle que soit son origine, a accès aux outils et aux compétences nécessaires pour réussir dans l'économie numérique. Nous croyons en un avenir où la technologie devient un levier d'autonomisation et de développement durable pour les communautés locales.",
-      image: '/font.jpeg',
+      image: '/gallerie/1.jpg',
       reverse: true,
     },
   ];

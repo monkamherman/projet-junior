@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { api } from '../../../lib/api';
 
 // Types
 export interface Attestation {
@@ -35,87 +36,34 @@ export interface EligibiliteResponse {
 
 // API functions
 export const getMesAttestations = async (): Promise<Attestation[]> => {
-  const response = await fetch('/api/attestations', {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem('token')}`,
-    },
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(
-      error.message || 'Erreur lors de la récupération des attestations'
-    );
-  }
-
-  return response.json();
+  const response = await api.get('/api/attestations');
+  return response.data;
 };
 
 export const verifierEligibiliteAttestation = async (
   formationId: string
 ): Promise<EligibiliteResponse> => {
-  const response = await fetch(
-    `/api/attestations/verifier-eligibilite/${formationId}`,
-    {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    }
+  const response = await api.get(
+    `/api/attestations/verifier-eligibilite/${formationId}`
   );
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(
-      error.message || "Erreur lors de la vérification d'éligibilité"
-    );
-  }
-
-  return response.json();
+  return response.data;
 };
 
 export const genererMonAttestation = async (
   formationId: string
 ): Promise<{ message: string; attestation: Attestation }> => {
-  const response = await fetch('/api/attestations/generer', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${localStorage.getItem('token')}`,
-    },
-    body: JSON.stringify({ formationId }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(
-      error.message || "Erreur lors de la génération de l'attestation"
-    );
-  }
-
-  return response.json();
+  const response = await api.post('/api/attestations/generer', { formationId });
+  return response.data;
 };
 
 export const telechargerAttestation = async (
   attestationId: string
 ): Promise<void> => {
-  const response = await fetch(
-    `/api/attestations/${attestationId}/telecharger`,
-    {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('token')}`,
-      },
-    }
+  const response = await api.get(
+    `/api/attestations/${attestationId}/telecharger`
   );
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(
-      error.message || "Erreur lors du téléchargement de l'attestation"
-    );
-  }
-
   // La réponse est une redirection vers le PDF
-  window.location.href = response.url;
+  window.location.href = response.data.url;
 };
 
 // Hooks

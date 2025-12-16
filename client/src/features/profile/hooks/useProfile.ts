@@ -7,7 +7,7 @@ const PROFILE_QUERY_KEY = 'profile';
 export const useProfile = () => {
   return useQuery({
     queryKey: [PROFILE_QUERY_KEY],
-    queryFn: () => apiGet<UserProfile>('/profile'),
+    queryFn: () => apiGet<UserProfile>('/api/user/profile'),
   });
 };
 
@@ -16,7 +16,7 @@ export const useUpdateProfile = () => {
 
   return useMutation({
     mutationFn: (data: UpdateProfileData) =>
-      apiPut<UserProfile>('/profile', data),
+      apiPut<UserProfile>('/api/user/profile', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [PROFILE_QUERY_KEY] });
     },
@@ -26,6 +26,6 @@ export const useUpdateProfile = () => {
 export const useUpdatePassword = () => {
   return useMutation({
     mutationFn: (data: { currentPassword: string; newPassword: string }) =>
-      apiPut('/profile/password', data),
+      apiPut('/api/user/password', data),
   });
 };

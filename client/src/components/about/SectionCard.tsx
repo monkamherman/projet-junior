@@ -1,10 +1,18 @@
-import React from 'react';
-import { Box, Typography, Card, CardContent, Grid, useTheme, useMediaQuery } from '@mui/material';
+import {
+  Box,
+  Card,
+  CardContent,
+  Grid,
+  Typography,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
 import { motion } from 'framer-motion';
+import React from 'react';
 
 interface SectionCardProps {
   title: string;
-  content: string | string[];
+  content: string | string[] | { [key: string]: string };
   icon: React.ReactNode;
   image: string;
   reverse?: boolean;
@@ -24,7 +32,7 @@ const SectionCard: React.FC<SectionCardProps> = ({
 
   const fadeIn = {
     hidden: { opacity: 0, y: 50 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6 } }
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
   };
 
   return (
@@ -35,9 +43,9 @@ const SectionCard: React.FC<SectionCardProps> = ({
       viewport={{ once: true, amount: 0.2 }}
       style={{ marginBottom: '4rem' }}
     >
-      <Card 
-        elevation={4} 
-        sx={{ 
+      <Card
+        elevation={4}
+        sx={{
           borderRadius: 4,
           overflow: 'hidden',
           backgroundColor: theme.palette.background.paper,
@@ -48,7 +56,10 @@ const SectionCard: React.FC<SectionCardProps> = ({
           transition: 'transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out',
         }}
       >
-        <Grid container direction={reverse && !isMobile ? 'row-reverse' : 'row'}>
+        <Grid
+          container
+          direction={reverse && !isMobile ? 'row-reverse' : 'row'}
+        >
           <Grid item xs={12} md={6}>
             <Box
               component="div"
@@ -75,8 +86,20 @@ const SectionCard: React.FC<SectionCardProps> = ({
                 p: 4,
               }}
             >
-              <Box sx={{ position: 'relative', zIndex: 1, p: 3, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 2 }}>
-                <Typography variant="h4" component="h3" sx={{ color: 'white', mb: 2 }}>
+              <Box
+                sx={{
+                  position: 'relative',
+                  zIndex: 1,
+                  p: 3,
+                  backgroundColor: 'rgba(0,0,0,0.5)',
+                  borderRadius: 2,
+                }}
+              >
+                <Typography
+                  variant="h4"
+                  component="h3"
+                  sx={{ color: 'white', mb: 2 }}
+                >
                   {title}
                 </Typography>
                 <Box sx={{ mb: 2 }}>{icon}</Box>
@@ -84,14 +107,22 @@ const SectionCard: React.FC<SectionCardProps> = ({
             </Box>
           </Grid>
           <Grid item xs={12} md={6}>
-            <CardContent sx={{ p: 5, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+            <CardContent
+              sx={{
+                p: 5,
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+              }}
+            >
               {Array.isArray(content) ? (
                 <Box component="ul" sx={{ pl: 2, mt: 2 }}>
                   {content.map((item, i) => (
-                    <Box 
-                      key={i} 
-                      component="li" 
-                      sx={{ 
+                    <Box
+                      key={i}
+                      component="li"
+                      sx={{
                         mb: 1.5,
                         display: 'flex',
                         alignItems: 'flex-start',
@@ -101,12 +132,30 @@ const SectionCard: React.FC<SectionCardProps> = ({
                           fontWeight: 'bold',
                           display: 'inline-block',
                           width: '1em',
-                          ml: -1
-                        }
+                          ml: -1,
+                        },
                       }}
                     >
                       <Typography variant="body1" color="text.primary">
                         {item}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              ) : typeof content === 'object' && content !== null ? (
+                <Box sx={{ mt: 2 }}>
+                  {Object.entries(content).map(([key, value]) => (
+                    <Box key={key} sx={{ mb: 2 }}>
+                      <Typography
+                        variant="h6"
+                        component="h4"
+                        sx={{
+                          fontWeight: 600,
+                          mb: 0.5,
+                          color: theme.palette.primary.main,
+                        }}
+                      >
+                        {value}
                       </Typography>
                     </Box>
                   ))}

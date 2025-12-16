@@ -9,30 +9,31 @@ const prisma = new PrismaClient();
 const validatePassword = (
   password: string
 ): { valid: boolean; message?: string } => {
-  if (password.length < 8) {
+  if (password.length < 6) {
     return {
       valid: false,
-      message: "Le mot de passe doit contenir au moins 8 caractères",
+      message: "Le mot de passe doit contenir au moins 6 caractères",
     };
   }
-  if (!/[A-Z]/.test(password)) {
+
+  // Compter les types de caractères présents
+  const hasLower = /[a-z]/.test(password);
+  const hasUpper = /[A-Z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  const hasSpecial = /[^A-Za-z0-9]/.test(password);
+
+  const typeCount = [hasLower, hasUpper, hasNumber, hasSpecial].filter(
+    Boolean
+  ).length;
+
+  if (typeCount < 2) {
     return {
       valid: false,
-      message: "Le mot de passe doit contenir au moins une majuscule",
+      message:
+        "Le mot de passe doit contenir au moins deux types de caractères différents (lettres, chiffres, majuscules ou caractères spéciaux)",
     };
   }
-  if (!/[0-9]/.test(password)) {
-    return {
-      valid: false,
-      message: "Le mot de passe doit contenir au moins un chiffre",
-    };
-  }
-  if (!/[^A-Za-z0-9]/.test(password)) {
-    return {
-      valid: false,
-      message: "Le mot de passe doit contenir au moins un caractère spécial",
-    };
-  }
+
   return { valid: true };
 };
 
@@ -63,10 +64,10 @@ const signupSchema = z.object({
 
   motDePasse: z
     .string()
-    .min(8, "Le mot de passe doit contenir au moins 8 caractères")
+    .min(6, "Le mot de passe doit contenir au moins 6 caractères")
     .refine((val) => validatePassword(val).valid, {
       message:
-        "Le mot de passe doit contenir au moins une majuscule, un chiffre et un caractère spécial",
+        "Le mot de passe doit contenir au moins deux types de caractères différents",
     }),
 
   telephone: z
@@ -107,10 +108,10 @@ const sendOtpSchema = z.object({
 
   motDePasse: z
     .string()
-    .min(8, "Le mot de passe doit contenir au moins 8 caractères")
+    .min(6, "Le mot de passe doit contenir au moins 6 caractères")
     .refine((val) => validatePassword(val).valid, {
       message:
-        "Le mot de passe doit contenir au moins une majuscule, un chiffre et un caractère spécial",
+        "Le mot de passe doit contenir au moins deux types de caractères différents",
     }),
 });
 

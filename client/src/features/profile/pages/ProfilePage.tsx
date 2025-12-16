@@ -1,3 +1,5 @@
+import type { Attestation } from '@/features/attestations/api/attestations.api';
+import { useMesAttestations } from '@/features/attestations/api/attestations.api';
 import {
   useGenerateAttestationMutation,
   useUserFormations,
@@ -20,7 +22,6 @@ import {
   TextInput,
   Title,
 } from '@mantine/core';
-import { createStyles } from '@mantine/emotion';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
 import {
@@ -47,48 +48,7 @@ import {
 } from '../hooks/useProfile';
 import type { UserProfile } from '../types';
 
-const useStyles = createStyles((theme) => ({
-  profileHeader: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    textAlign: 'center',
-    marginBottom: theme.spacing.xl,
-  },
-  tabContent: {
-    padding: theme.spacing.md,
-  },
-  formationCard: {
-    transition: 'transform 0.2s, box-shadow 0.2s',
-    '&:hover': {
-      transform: 'translateY(-2px)',
-      boxShadow: theme.shadows.md,
-    },
-  },
-  paymentStatus: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: theme.spacing.xs,
-    padding: `${theme.spacing.xs} ${theme.spacing.sm}`,
-    borderRadius: theme.radius.sm,
-    fontWeight: 500,
-  },
-  statusPaid: {
-    backgroundColor: theme.colors.green[0],
-    color: theme.colors.green[7],
-  },
-  statusPending: {
-    backgroundColor: theme.colors.orange[0],
-    color: theme.colors.orange[7],
-  },
-  statusError: {
-    backgroundColor: theme.colors.red[0],
-    color: theme.colors.red[7],
-  },
-}));
-
 export function ProfilePage() {
-  const { classes } = useStyles();
   const [activeTab, setActiveTab] = useState<string | null>('profile');
 
   // Charger les données des formations et des paiements
@@ -106,6 +66,8 @@ export function ProfilePage() {
     };
   const { data: payments = [], isLoading: isLoadingPayments } =
     useUserPayments();
+  const { data: attestations = [], isLoading: isLoadingAttestations } =
+    useMesAttestations();
   const { mutate: generateAttestation, isPending: isGeneratingAttestation } =
     useGenerateAttestationMutation();
 
@@ -278,9 +240,28 @@ export function ProfilePage() {
         color={
           statusInfo.color.includes('status') ? undefined : statusInfo.color
         }
-        className={
+        style={
           statusInfo.color.includes('status')
-            ? classes[statusInfo.color as keyof typeof classes]
+            ? {
+                backgroundColor:
+                  statusInfo.color === 'statusPaid'
+                    ? 'var(--mantine-color-green-0)'
+                    : statusInfo.color === 'statusPending'
+                      ? 'var(--mantine-color-orange-0)'
+                      : 'var(--mantine-color-red-0)',
+                color:
+                  statusInfo.color === 'statusPaid'
+                    ? 'var(--mantine-color-green-7)'
+                    : statusInfo.color === 'statusPending'
+                      ? 'var(--mantine-color-orange-7)'
+                      : 'var(--mantine-color-red-7)',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 'var(--mantine-spacing-xs)',
+                padding: 'var(--mantine-spacing-xs) var(--mantine-spacing-sm)',
+                borderRadius: 'var(--mantine-radius-sm)',
+                fontWeight: 500,
+              }
             : undefined
         }
         variant={statusInfo.color.includes('status') ? 'light' : 'outline'}
@@ -292,7 +273,15 @@ export function ProfilePage() {
 
   return (
     <Container size="md" py="xl">
-      <div className={classes.profileHeader}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          textAlign: 'center',
+          marginBottom: 'var(--mantine-spacing-xl)',
+        }}
+      >
         <Title order={2}>
           {profile.prenom} {profile.nom}
         </Title>
@@ -324,6 +313,12 @@ export function ProfilePage() {
           <Tabs.Tab value="formations" leftSection={<IconSchool size={14} />}>
             Mes Formations
           </Tabs.Tab>
+          <Tabs.Tab
+            value="attestations"
+            leftSection={<IconFileDownload size={14} />}
+          >
+            Mes Attestations
+          </Tabs.Tab>
           <Tabs.Tab value="payments" leftSection={<IconReceipt2 size={14} />}>
             Mes Paiements
           </Tabs.Tab>
@@ -333,7 +328,7 @@ export function ProfilePage() {
         </Tabs.List>
 
         <Paper withBorder p="md" mt="md">
-          <Tabs.Panel value="profile" className={classes.tabContent}>
+          <Tabs.Panel value="profile" p="md">
             <form onSubmit={profileForm.onSubmit(handleProfileSubmit)}>
               <Stack gap="md">
                 <Group grow>
@@ -378,17 +373,19 @@ export function ProfilePage() {
             </form>
           </Tabs.Panel>
 
-          <Tabs.Panel value="formations" className={classes.tabContent}>
+          <Tabs.Panel value="formations" p="md">
             <Stack gap="md">
               <Title order={3} mb="md">
-                Mes Formations
+                Mes Formations Payées
               </Title>
 
               {isLoadingFormations ? (
                 <LoadingOverlay visible={true} />
               ) : formations?.length === 0 ? (
                 <Alert color="blue">
-                  Vous n'êtes inscrit à aucune formation pour le moment.
+                  Vous n'avez aucune formation payée pour le moment. Les
+                  formations apparaissent ici après validation de votre
+                  paiement.
                 </Alert>
               ) : (
                 <Stack gap="md">
@@ -397,21 +394,35 @@ export function ProfilePage() {
                       key={formation.id}
                       withBorder
                       radius="md"
-                      className={classes.formationCard}
+                      style={{ transition: 'transform 0.2s, box-shadow 0.2s' }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow =
+                          'var(--mantine-shadow-md)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}
                     >
                       <Group justify="space-between" align="flex-start">
                         <div>
-                          <Text fw={600} size="lg">
-                            {formation.titre}
-                          </Text>
-                          <Text c="dimmed" size="sm" mt={4}>
+                          <Group gap="sm" mb="sm">
+                            <Text fw={600} size="lg">
+                              {formation.titre}
+                            </Text>
+                            <Badge color="green" variant="light" size="sm">
+                              Payée
+                            </Badge>
+                          </Group>
+                          <Text c="dimmed" size="sm" mt={4} component="div">
                             <Group gap={4}>
                               <IconCalendar size={14} />
                               {formatDate(formation.dateDebut)} -{' '}
                               {formatDate(formation.dateFin)}
                             </Group>
                           </Text>
-                          <Text c="dimmed" size="sm" mt={4}>
+                          <Text c="dimmed" size="sm" mt={4} component="div">
                             <Group gap={4}>
                               <IconUser size={14} />
                               Formateur: {formation.formateur.prenom}{' '}
@@ -472,7 +483,96 @@ export function ProfilePage() {
             </Stack>
           </Tabs.Panel>
 
-          <Tabs.Panel value="payments" className={classes.tabContent}>
+          <Tabs.Panel value="attestations" p="md">
+            <Stack gap="md">
+              <Title order={3} mb="md">
+                Mes Attestations
+              </Title>
+
+              {isLoadingAttestations ? (
+                <LoadingOverlay visible={true} />
+              ) : attestations?.length === 0 ? (
+                <Alert color="blue">
+                  Vous n'avez aucune attestation pour le moment. Les
+                  attestations sont générées automatiquement après la validation
+                  de votre formation.
+                </Alert>
+              ) : (
+                <Stack gap="md">
+                  {attestations?.map((attestation: Attestation) => (
+                    <Card
+                      key={attestation.id}
+                      withBorder
+                      radius="md"
+                      style={{ transition: 'transform 0.2s, box-shadow 0.2s' }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow =
+                          'var(--mantine-shadow-md)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = 'none';
+                      }}
+                    >
+                      <Group justify="space-between" align="flex-start">
+                        <div>
+                          <Text fw={600} size="lg">
+                            {attestation.inscription.formation.titre}
+                          </Text>
+                          <Text c="dimmed" size="sm" mt={4} component="div">
+                            <Group gap={4}>
+                              <IconCalendar size={14} />
+                              {formatDate(
+                                attestation.inscription.formation.dateDebut
+                              )}{' '}
+                              -{' '}
+                              {formatDate(
+                                attestation.inscription.formation.dateFin
+                              )}
+                            </Group>
+                          </Text>
+                          <Text c="dimmed" size="sm" mt={4}>
+                            Numéro: {attestation.numero}
+                          </Text>
+                          <Badge
+                            color={
+                              attestation.statut === 'TELECHARGEE'
+                                ? 'green'
+                                : attestation.statut === 'ENVOYEE'
+                                  ? 'blue'
+                                  : 'orange'
+                            }
+                            variant="light"
+                            mt="md"
+                          >
+                            {attestation.statut === 'TELECHARGEE'
+                              ? 'Téléchargée'
+                              : attestation.statut === 'ENVOYEE'
+                                ? 'Envoyée'
+                                : 'Générée'}
+                          </Badge>
+                        </div>
+
+                        <Button
+                          leftSection={<IconFileDownload size={16} />}
+                          variant="outline"
+                          onClick={() => {
+                            // Implémenter le téléchargement de l'attestation
+                            window.open(attestation.urlPdf, '_blank');
+                          }}
+                        >
+                          Télécharger
+                        </Button>
+                      </Group>
+                    </Card>
+                  ))}
+                </Stack>
+              )}
+            </Stack>
+          </Tabs.Panel>
+
+          <Tabs.Panel value="payments" p="md">
             <Stack gap="md">
               <Title order={3} mb="md">
                 Historique des Paiements
@@ -521,7 +621,7 @@ export function ProfilePage() {
             </Stack>
           </Tabs.Panel>
 
-          <Tabs.Panel value="password" className={classes.tabContent}>
+          <Tabs.Panel value="password" p="md">
             <form onSubmit={passwordForm.onSubmit(handlePasswordSubmit)}>
               <Stack gap="md">
                 <PasswordInput
