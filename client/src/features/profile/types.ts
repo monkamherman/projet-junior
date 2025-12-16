@@ -7,7 +7,21 @@ export interface UserProfile {
   role: 'ADMIN' | 'FORMATEUR' | 'APPRENANT';
   createdAt: string;
   updatedAt: string;
-  // Ajoutez d'autres champs de profil si nécessaire
+  // Ajout des formations et attestations
+  formations?: Array<{
+    id: string;
+    titre: string;
+    description: string;
+    dateDebut: string;
+    duree: number;
+    statut: 'TERMINÉ' | 'EN_COURS' | 'NON_COMMENCÉ';
+  }>;
+  attestations?: Array<{
+    id: string;
+    titre: string;
+    formation: string;
+    dateDelivrance: string;
+  }>;
 }
 
 export interface UpdateProfileData {
