@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
-
+import sendMail from "../../nodemailer/sendmail";
+import * as pdfService from "../../services/pdfService";
 const prisma = new PrismaClient();
 
 // Simulation de paiement
@@ -8,6 +9,23 @@ export async function simulatePayment(req: Request, res: Response) {
   const { formationId, userId, montant } = req.body;
 
   try {
+    // Validation des ObjectID MongoDB (24 caractères hexadécimaux)
+    const objectIdRegex = /^[0-9a-fA-F]{24}$/;
+
+    if (!objectIdRegex.test(formationId)) {
+      return res.status(400).json({
+        success: false,
+        message: "ID de formation invalide",
+      });
+    }
+
+    if (!objectIdRegex.test(userId)) {
+      return res.status(400).json({
+        success: false,
+        message: "ID d'utilisateur invalide",
+      });
+    }
+
     // Vérifier si la formation existe
     const formation = await prisma.formation.findUnique({
       where: { id: formationId },
@@ -105,6 +123,21 @@ export async function generateAttestation(req: Request, res: Response) {
   const { formationId, userId } = req.body;
 
   try {
+    // Validation des ObjectID MongoDB (24 caractères hexadécimaux)
+    const objectIdRegex = /^[0-9a-fA-F]{24}$/;
+
+    if (!objectIdRegex.test(formationId)) {
+      return res.status(400).json({
+        message: "ID de formation invalide",
+      });
+    }
+
+    if (!objectIdRegex.test(userId)) {
+      return res.status(400).json({
+        message: "ID d'utilisateur invalide",
+      });
+    }
+
     // Vérifier si l'utilisateur a une inscription validée pour cette formation
     const inscription = await prisma.inscription.findFirst({
       where: {
@@ -124,6 +157,20 @@ export async function generateAttestation(req: Request, res: Response) {
       });
     }
 
+    // Vérifier si une attestation existe déjà pour cette inscription
+    const existingAttestation = await prisma.attestation.findFirst({
+      where: {
+        inscriptionId: inscription.id,
+      },
+    });
+
+    if (existingAttestation) {
+      return res.status(400).json({
+        message: "Une attestation a déjà été générée pour cette formation",
+        attestation: existingAttestation,
+      });
+    }
+
     // Générer un numéro d'attestation unique
     const numeroAttestation = `ATT-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
 
@@ -131,13 +178,22 @@ export async function generateAttestation(req: Request, res: Response) {
     const attestation = await prisma.attestation.create({
       data: {
         numero: numeroAttestation,
-        urlPdf: `/attestations/${numeroAttestation}.pdf`, // URL simulée
+        urlPdf: `/attestations/${numeroAttestation}.pdf`,
         statut: "GENEREE",
         utilisateurId: userId,
         formationId: formationId,
         inscriptionId: inscription.id,
       },
     });
+
+    // Générer le fichier PDF
+    try {
+      await pdfService.generateAttestationPDF(attestation, inscription);
+      console.log(`PDF généré pour l'attestation ${numeroAttestation}`);
+    } catch (pdfError) {
+      console.error("Erreur lors de la génération du PDF:", pdfError);
+      // Ne pas échouer la requête si le PDF ne se génère pas
+    }
 
     const attestationResult = {
       id: attestation.id,
@@ -160,6 +216,44 @@ export async function generateAttestation(req: Request, res: Response) {
     console.log(
       `Attestation générée et enregistrée pour formation ${formationId}, utilisateur ${userId}`
     );
+
+    // Envoyer l'attestation par email
+    try {
+      const emailContent = `
+        Félicitations ${inscription.utilisateur.prenom} ${inscription.utilisateur.nom} !
+
+        Votre attestation de formation a été générée avec succès.
+
+        Détails de la formation:
+        - Formation: ${inscription.formation.titre}
+        - Description: ${inscription.formation.description}
+        - Numéro d'attestation: ${numeroAttestation}
+        - Date de génération: ${new Date().toLocaleDateString("fr-FR")}
+
+        Votre attestation est disponible dans votre espace personnel.
+        
+        Cordialement,
+        L'équipe de CENTIC
+      `;
+
+      const emailResult = await sendMail(
+        inscription.utilisateur.email,
+        emailContent
+      );
+
+      if (emailResult.success) {
+        console.log(
+          `Email envoyé avec succès à ${inscription.utilisateur.email}, messageId: ${emailResult.messageId}`
+        );
+      } else {
+        console.error(
+          `Erreur lors de l'envoi de l'email: ${emailResult.error}`
+        );
+      }
+    } catch (emailError) {
+      console.error("Erreur lors de l'envoi de l'email:", emailError);
+      // Ne pas échouer la requête si l'email ne s'envoie pas
+    }
 
     res.json(attestationResult);
   } catch (error) {

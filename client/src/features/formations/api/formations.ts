@@ -186,7 +186,19 @@ export async function generateAttestation(formationId: string, userId: string) {
     );
   }
 
-  return response.json();
+  const result = await response.json();
+
+  // Télécharger le PDF si disponible
+  if (result.urlPdf) {
+    const link = document.createElement('a');
+    link.href = `${API_URL}${result.urlPdf}`;
+    link.download = `attestation-formation-${formationId}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
+
+  return result;
 }
 
 export async function getUserAttestations(userId: string) {

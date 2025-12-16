@@ -15,6 +15,7 @@ export async function getProfile(req: AuthenticatedRequest, res: Response) {
       return res.status(401).json({ message: "Non autorisé." });
     }
 
+    // Récupérer l'utilisateur avec ses formations et attestations
     const user = await prisma.utilisateur.findUnique({
       where: { id: req.user.id },
       select: {
@@ -33,7 +34,72 @@ export async function getProfile(req: AuthenticatedRequest, res: Response) {
       return res.status(404).json({ message: "Utilisateur non trouvé." });
     }
 
-    res.json(user);
+    // Récupérer les formations de l'utilisateur
+    const inscriptions = await prisma.inscription.findMany({
+      where: {
+        utilisateurId: req.user.id,
+        statut: "VALIDEE",
+      },
+      include: {
+        formation: {
+          include: {
+            formateur: {
+              select: {
+                id: true,
+                nom: true,
+                prenom: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    // Transformer les inscriptions en formations
+    const formations = inscriptions.map((inscription) => ({
+      id: inscription.formation.id,
+      titre: inscription.formation.titre,
+      description: inscription.formation.description,
+      dateDebut: inscription.formation.dateDebut,
+      duree: Math.ceil(
+        (new Date(inscription.formation.dateFin).getTime() -
+          new Date(inscription.formation.dateDebut).getTime()) /
+          (1000 * 60 * 60 * 24)
+      ), // Durée en jours
+      statut:
+        new Date() > new Date(inscription.formation.dateFin)
+          ? ("TERMINÉ" as const)
+          : new Date() >= new Date(inscription.formation.dateDebut)
+            ? ("EN_COURS" as const)
+            : ("NON_COMMENCÉ" as const),
+    }));
+
+    // Récupérer les attestations de l'utilisateur
+    const attestations = await prisma.attestation.findMany({
+      where: {
+        utilisateurId: req.user.id,
+      },
+      include: {
+        formation: true,
+      },
+    });
+
+    // Transformer les attestations
+    const attestationsFormatted = attestations.map((attestation) => ({
+      id: attestation.id,
+      titre: `Attestation - ${attestation.formation.titre}`,
+      formation: attestation.formation.titre,
+      dateDelivrance: attestation.dateEmission,
+    }));
+
+    // Combiner les données
+    const profileData = {
+      ...user,
+      formations,
+      attestations: attestationsFormatted,
+    };
+
+    res.json(profileData);
   } catch (error) {
     console.error(error);
     res.status(500).json({

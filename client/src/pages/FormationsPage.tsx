@@ -7,6 +7,7 @@ import {
   getAllFormations,
   simulatePayment,
 } from '@/features/formations/api/formations';
+import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import {
@@ -480,6 +481,8 @@ Module 5: Projet Final
     navigate('/formations');
   };
 
+  const { toast } = useToast();
+
   const handlePayment = async (formation: Formation) => {
     try {
       // Vérifier si l'utilisateur est connecté
@@ -493,21 +496,56 @@ Module 5: Projet Final
 
       // Si le paiement est réussi, générer l'attestation
       if (paymentResult.success) {
-        const attestationResult = await generateAttestation(
-          formation.id,
-          userId
-        );
+        try {
+          const attestationResult = await generateAttestation(
+            formation.id,
+            userId
+          );
 
-        // Rediriger vers la page de confirmation avec les détails
-        navigate(`/formations/${formation.id}/confirmation`, {
-          state: {
-            formation,
-            payment: paymentResult,
-            attestation: attestationResult,
-          },
-        });
+          toast({
+            title: 'Succès !',
+            description:
+              'Votre attestation a été générée et envoyée par email.',
+            variant: 'default',
+          });
+
+          // Rediriger vers la page de confirmation avec les détails
+          navigate(`/formations/${formation.id}/confirmation`, {
+            state: {
+              formation,
+              payment: paymentResult,
+              attestation: attestationResult,
+            },
+          });
+        } catch (attestationError: Error) {
+          console.error(
+            "Erreur lors de la génération de l'attestation:",
+            attestationError
+          );
+
+          if (attestationError.message?.includes('déjà été générée')) {
+            toast({
+              title: 'Information',
+              description: 'Une attestation existe déjà pour cette formation.',
+              variant: 'default',
+            });
+          } else {
+            toast({
+              title: 'Erreur',
+              description: "Erreur lors de la génération de l'attestation.",
+              variant: 'destructive',
+            });
+          }
+
+          setError("Erreur lors de la génération de l'attestation.");
+        }
       } else {
         setError('Le paiement a échoué. Veuillez réessayer.');
+        toast({
+          title: 'Erreur de paiement',
+          description: 'Le paiement a échoué. Veuillez réessayer.',
+          variant: 'destructive',
+        });
       }
     } catch (error) {
       console.error('Erreur lors du paiement:', error);
