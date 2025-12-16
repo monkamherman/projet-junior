@@ -35,7 +35,17 @@ export async function getFormations(
   res: Response
 ): Promise<void> {
   try {
-    const formations = await prisma.formation.findMany();
+    const formations = await prisma.formation.findMany({
+      include: {
+        formateur: {
+          select: {
+            id: true,
+            nom: true,
+            prenom: true,
+          },
+        },
+      },
+    });
     res.json(formations);
   } catch (error: unknown) {
     console.error(error);
