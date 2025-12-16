@@ -1,3 +1,4 @@
+import { Toaster } from '@/components/ui/toaster';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { router } from '@/routes/routes';
 import { MantineProvider } from '@mantine/core';
@@ -25,6 +26,7 @@ const App: React.FC = () => {
         <AuthProvider>
           <Notifications position="top-right" />
           <RouterProvider router={router} />
+          <Toaster />
           <ReactQueryDevtools initialIsOpen={false} />
         </AuthProvider>
       </MantineProvider>

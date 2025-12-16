@@ -21,46 +21,48 @@ export const authApi = {
       nom: data.nom || '',
       prenom: data.prenom || '',
       telephone: data.telephone || '',
-      motDePasse: data.motDePasse || ''
+      motDePasse: data.motDePasse || '',
     };
-    
+
     // Vérification des champs obligatoires
     const requiredFields = ['email', 'otp', 'nom', 'prenom', 'motDePasse'];
-    const missingFields = requiredFields.filter(field => !requestData[field]);
-    
+    const missingFields = requiredFields.filter((field) => !requestData[field]);
+
     if (missingFields.length > 0) {
       const errorMessage = `Champs manquants: ${missingFields.join(', ')}`;
       console.error('Erreur de validation:', errorMessage);
       return Promise.reject(new Error(errorMessage));
     }
-    
+
     console.log('Envoi de la requête de vérification OTP:', {
       url: '/api/auth/verify-otp',
       data: requestData,
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      }
+        Accept: 'application/json',
+      },
     });
-    
-    return axiosInstance.post<{ success: boolean; message?: string }>(
-      '/api/auth/verify-otp',
-      requestData,
-      {
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
+
+    return axiosInstance
+      .post<{ success: boolean; message?: string }>(
+        '/api/auth/verify-otp',
+        requestData,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
         }
-      }
-    ).catch(error => {
-      console.error('Erreur lors de la vérification OTP:', {
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-        message: error.message
+      )
+      .catch((error) => {
+        console.error('Erreur lors de la vérification OTP:', {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+          message: error.message,
+        });
+        throw error;
       });
-      throw error;
-    });
   },
 
   // Connexion
@@ -71,23 +73,19 @@ export const authApi = {
     }),
 
   // Déconnexion
-  logout: () => 
-    axiosInstance.post('/api/auth/logout', {}, {
-      timeout: 5000, // Timeout de 5 secondes
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    }),
+  logout: () =>
+    axiosInstance.post(
+      '/api/auth/logout',
+      {},
+      {
+        timeout: 5000, // Timeout de 5 secondes
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
+    ),
 
   // Rafraîchissement du token (à implémenter côté serveur si nécessaire)
   refreshToken: (data: { refresh: string }) =>
     axiosInstance.post<RefreshTokenResponse>('/api/auth/refresh', data),
-
-  // Mot de passe oublié (à implémenter côté serveur si nécessaire)
-  forgotPassword: (email: string) =>
-    axiosInstance.post('/api/auth/forgot-password', { email }),
-
-  // Réinitialisation du mot de passe (à implémenter côté serveur si nécessaire)
-  resetPassword: (data: { token: string; password: string }) =>
-    axiosInstance.post('/api/auth/reset-password', data),
 };

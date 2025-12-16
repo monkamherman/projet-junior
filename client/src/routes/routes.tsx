@@ -9,10 +9,8 @@ import {
 import { ProfilePage } from '@/features/profile/pages/ProfilePage';
 import UserLayout from '@/layouts/UserLayout';
 import APropos from '@/pages/APropos';
-import ForgotPassword from '@/pages/auth/ForgotPassword';
 import Login from '@/pages/auth/Login';
 import Register from '@/pages/auth/Register';
-import ResetPassword from '@/pages/auth/ResetPassword';
 import VerifyOTP from '@/pages/auth/VerifyOTP';
 import FormationConfirmationPage from '@/pages/FormationConfirmationPage';
 import FormationsPage from '@/pages/FormationsPage';
@@ -39,8 +37,6 @@ const RouterInstance = createBrowserRouter([
       // Authentication routes (direct imports to avoid lazy load mismatch)
       { path: 'login', element: <Login /> },
       { path: 'register', element: <Register /> },
-      { path: 'forgot-password', element: <ForgotPassword /> },
-      { path: 'reset-password', element: <ResetPassword /> },
       { path: 'verify-otp', element: <VerifyOTP /> },
       // Profile accessible directement
       {

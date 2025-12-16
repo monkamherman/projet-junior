@@ -32,7 +32,7 @@ const createSchema = (otpSent: boolean) => {
       email: z
         .string()
         .email('Email invalide')
-        .max(100, 'L\'email ne peut pas dépasser 100 caractères'),
+        .max(100, "L'email ne peut pas dépasser 100 caractères"),
       telephone: z
         .string()
         .min(10, 'Le numéro de téléphone doit contenir au moins 10 chiffres')
@@ -45,7 +45,7 @@ const createSchema = (otpSent: boolean) => {
         .string()
         .min(6, 'Le mot de passe doit contenir au moins 6 caractères'),
       confirmPassword: z.string(),
-      otp: otpSent 
+      otp: otpSent
         ? z.string().min(6, 'Le code OTP est requis')
         : z.string().optional(),
     })
@@ -79,10 +79,11 @@ const Register = () => {
   // Mise à jour du schéma de validation lorsque otpSent change
   useEffect(() => {
     form.clearErrors();
-    form.trigger();
   }, [otpSent, form]);
 
-  const onSubmit = async (formValues: z.infer<ReturnType<typeof createSchema>>) => {
+  const onSubmit = async (
+    formValues: z.infer<ReturnType<typeof createSchema>>
+  ) => {
     setIsSubmitting(true);
     try {
       if (!otpSent) {
@@ -97,7 +98,7 @@ const Register = () => {
 
         // Activer le mode OTP sans réinitialiser le formulaire
         setOtpSent(true);
-        
+
         toast({
           title: 'Code OTP envoyé',
           description: 'Veuillez vérifier votre email et entrer le code OTP',
@@ -105,7 +106,7 @@ const Register = () => {
       } else {
         // Récupérer toutes les valeurs du formulaire
         const allValues = form.getValues();
-        
+
         // Deuxième étape : Vérification de l'OTP et création du compte
         const response = await authApi.verifyOtp({
           email: allValues.email,
@@ -121,25 +122,28 @@ const Register = () => {
           try {
             const loginResponse = await authApi.login({
               email: allValues.email,
-              password: allValues.motDePasse
+              password: allValues.motDePasse,
             });
 
             // Stocker le token et rafraîchir le token
             if (loginResponse.data.access && loginResponse.data.refresh) {
               localStorage.setItem('token', loginResponse.data.access);
               localStorage.setItem('refresh_token', loginResponse.data.refresh);
-              
+
               toast({
                 title: 'Inscription réussie !',
                 description: 'Vous êtes maintenant connecté.',
                 variant: 'default',
               });
-              
+
               // Redirection vers la page d'accueil
               navigate('/');
             }
           } catch (loginError) {
-            console.error('Erreur lors de la connexion automatique:', loginError);
+            console.error(
+              'Erreur lors de la connexion automatique:',
+              loginError
+            );
             // Si la connexion automatique échoue, rediriger vers la page de connexion
             toast({
               title: 'Compte créé avec succès',
@@ -149,15 +153,17 @@ const Register = () => {
             navigate('/login');
           }
         } else {
-          throw new Error(response.data.message || "Échec de la création du compte");
+          throw new Error(
+            response.data.message || 'Échec de la création du compte'
+          );
         }
       }
     } catch (error: unknown) {
       let errorMessage = 'Une erreur est survenue';
-      
+
       if (axios.isAxiosError(error) && error.response) {
         errorMessage = error.response.data?.message || error.message;
-        
+
         // Si l'erreur concerne l'OTP, on réinitialise le formulaire
         if (error.response.data?.code === 'INVALID_OTP') {
           setOtpSent(false);
@@ -165,9 +171,9 @@ const Register = () => {
       } else if (error instanceof Error) {
         errorMessage = error.message;
       }
-      
-      console.error('Erreur lors de l\'inscription:', error);
-      
+
+      console.error("Erreur lors de l'inscription:", error);
+
       toast({
         variant: 'destructive',
         title: 'Erreur',
@@ -179,8 +185,8 @@ const Register = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4 bg-black">
-      <div className="w-full max-w-md space-y-6 bg-white p-8 rounded-xl shadow-2xl">
+    <div className="flex min-h-screen items-center justify-center bg-black p-4">
+      <div className="w-full max-w-md space-y-6 rounded-xl bg-white p-8 shadow-2xl">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Créer un compte</h1>
           <p className="text-muted-foreground">
