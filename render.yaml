@@ -21,3 +21,8 @@ services:
         value: 1d
       - key: APP_URL
         value: https://projet-junior-client.onrender.com
+      # Configuration SMTP pour l'envoi d'emails
+      - key: SMTP_USER
+        value: "cesaristos85@gmail.com"
+      - key: SMTP_PASS
+        value: "ybfm tkhc pyaa bmuy"

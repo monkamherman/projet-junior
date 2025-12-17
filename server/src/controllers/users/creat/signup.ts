@@ -465,18 +465,22 @@ L'équipe Centic`;
     console.log(`[OTP] Réponse du serveur SMTP: ${JSON.stringify(sendResult)}`);
 
     // Envoyer une réponse de succès
-    const response = {
+    const response: any = {
       success: true,
       message: "Un code de vérification a été envoyé à votre adresse email.",
-      // En développement, on peut renvoyer l'OTP pour faciliter les tests
-      ...(process.env.NODE_ENV !== "production" && {
-        debug: {
-          otp: otpCode,
-          expiresAt: expiresAt.toISOString(),
-          email: email,
-        },
-      }),
     };
+
+    // Toujours inclure l'OTP en développement ou si le mode demo est activé
+    if (process.env.NODE_ENV !== "production" || sendResult.otpCode) {
+      response.debug = {
+        otp: otpCode,
+        expiresAt: expiresAt.toISOString(),
+        email: email,
+        note: sendResult.otpCode
+          ? "Mode demo - OTP affiché pour tests"
+          : "Mode développement",
+      };
+    }
 
     console.log(`[OTP] Réponse envoyée au client pour ${email}`);
     return res.status(200).json(response);

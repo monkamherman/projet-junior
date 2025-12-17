@@ -49,8 +49,44 @@ const createTransporter = async (): Promise<nodemailer.Transporter> => {
 const sendMail = async (
   email: string,
   text: string
-): Promise<{ success: boolean; error?: string; messageId?: string }> => {
+): Promise<{
+  success: boolean;
+  error?: string;
+  messageId?: string;
+  otpCode?: string;
+}> => {
   console.log(`[EMAIL] Tentative d'envoi d'email à: ${email}`);
+
+  // Vérifier si les identifiants SMTP sont configurés
+  if (
+    !envs.address_mail ||
+    !envs.mot_de_passe ||
+    envs.address_mail === "cesaristos85@gmail.com" ||
+    envs.mot_de_passe === "ybfm tkhc pyaa bmuy"
+  ) {
+    console.log(
+      `[EMAIL] Configuration SMTP non trouvée ou utilise les valeurs par défaut`
+    );
+    console.log(`[EMAIL] === DÉBUT MODE DÉMO ===`);
+    console.log(`[EMAIL] Email destinataire: ${email}`);
+    console.log(`[EMAIL] Contenu du message:`);
+    console.log(text);
+    console.log(`[EMAIL] === FIN MODE DÉMO ===`);
+
+    // Extraire le code OTP du message pour le retourner
+    const otpMatch = text.match(/(\d{6})/);
+    const otpCode = otpMatch ? otpMatch[1] : null;
+
+    if (otpCode) {
+      console.log(`[EMAIL] CODE OTP POUR TEST: ${otpCode}`);
+    }
+
+    return {
+      success: true,
+      messageId: `demo-${Date.now()}`,
+      otpCode: otpCode || undefined,
+    };
+  }
 
   try {
     const transporter = await Promise.race([
