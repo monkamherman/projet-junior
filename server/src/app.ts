@@ -7,28 +7,8 @@ import express from "express";
 import cacheControl from "express-cache-controller";
 import helmet from "helmet";
 import morgan from "morgan";
-import { createClient } from "redis";
 import { ONE_HUNDRED, SIXTY } from "./core/constants";
 import registerRoutes from "./routes";
-
-// Création du client Redis (optionnel en dev/tests)
-let redisReady = false;
-const redisClient = createClient({ url: "redis://localhost:6379" });
-
-redisClient.on("error", (err) => {
-  console.warn("Redis indisponible:", (err as Error).message);
-});
-
-(async () => {
-  try {
-    await redisClient.connect();
-    redisReady = true;
-    console.log("Connexion Redis établie avec succès.");
-  } catch (_err) {
-    redisReady = false;
-    console.warn("Redis non connecté, démarrage sans rate limiting Redis.");
-  }
-})();
 
 const morganStream = {
   write: (message: string) => {
@@ -82,25 +62,44 @@ app.use(
   })
 );
 
-// Rate limiting (après les routes critiques)
+// Rate limiting simple en mémoire (remplace Redis)
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+
+// Nettoyage périodique du rate limiting (toutes les 5 minutes)
+setInterval(
+  () => {
+    const now = Date.now();
+    for (const [key, data] of rateLimitMap.entries()) {
+      if (now > data.resetTime) {
+        rateLimitMap.delete(key);
+      }
+    }
+  },
+  5 * 60 * 1000
+);
+
+// Rate limiting simplifié
 app.use(async (req, res, next) => {
-  if (!redisReady) return next();
   const ip = req.ip;
+  const now = Date.now();
   const key = `rate_limit:${ip}`;
   const limit = ONE_HUNDRED;
+  const windowMs = SIXTY * 1000;
 
-  const current = await redisClient.incr(key);
+  const existing = rateLimitMap.get(key);
 
-  if (current === 1) {
-    await redisClient.expire(key, SIXTY);
+  if (!existing || now > existing.resetTime) {
+    rateLimitMap.set(key, { count: 1, resetTime: now + windowMs });
+    return next();
   }
 
-  if (current > limit) {
+  if (existing.count >= limit) {
     return res
       .status(429)
       .json({ error: "Trop de requêtes depuis cette adresse IP" });
   }
 
+  existing.count++;
   next();
 });
 

@@ -1,9 +1,8 @@
-import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { Request, Response } from "express";
 import { z } from "zod";
+import prisma from "../../../lib/prisma";
 import sendMail from "../../../nodemailer/sendmail";
-const prisma = new PrismaClient();
 
 // Fonction pour valider la force du mot de passe
 const validatePassword = (

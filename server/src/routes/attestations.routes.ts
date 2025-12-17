@@ -1,4 +1,3 @@
-import { PrismaClient } from "@prisma/client";
 import { Router } from "express";
 import path from "path";
 import {
@@ -8,10 +7,10 @@ import {
   verifierEligibiliteAttestation,
 } from "../controllers/attestations/attestation.controller";
 import { generateAttestation } from "../controllers/formations/formation.controller";
+import prisma from "../lib/prisma";
 import authMiddleware from "../middlewares/auth.middleware";
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Route publique pour la simulation d'attestation
 router.post("/generate", generateAttestation);

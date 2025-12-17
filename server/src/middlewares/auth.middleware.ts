@@ -1,8 +1,6 @@
-import { PrismaClient } from "@prisma/client";
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
-
-const prisma = new PrismaClient();
+import prisma from "../lib/prisma";
 
 // Interface pour l'utilisateur authentifié
 export interface AuthenticatedUser {
