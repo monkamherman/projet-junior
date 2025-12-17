@@ -20,7 +20,7 @@ export const axiosInstance = axios.create({
     Accept: 'application/json',
   },
   withCredentials: import.meta.env.DEV, // Seulement en développement local
-  timeout: 30000, // 30 secondes pour gérer les cold starts de Render
+  timeout: 45000, // 45 secondes pour gérer les cold starts de Render + email
 });
 
 // Intercepteur pour ajouter le token d'authentification
@@ -47,24 +47,25 @@ axiosInstance.interceptors.response.use(
       _retryCount?: number;
     };
 
-    // Gestion des timeouts et erreurs de réseau (cold starts Render)
+    // Gestion des timeouts et erreurs de réseau (cold starts Render + email)
     if (
       (error.code === 'ECONNABORTED' ||
         error.code === 'ECONNRESET' ||
         error.message?.includes('timeout')) &&
       originalRequest &&
       !originalRequest._retry &&
-      (originalRequest._retryCount || 0) < 2
+      (originalRequest._retryCount || 0) < 3
     ) {
       originalRequest._retry = true;
       originalRequest._retryCount = (originalRequest._retryCount || 0) + 1;
 
       console.log(
-        `Tentative de retry ${originalRequest._retryCount}/2 pour l'URL: ${originalRequest.url}`
+        `Tentative de retry ${originalRequest._retryCount}/3 pour l'URL: ${originalRequest.url}`
       );
 
-      // Attendre un peu avant de retryer (pour le cold start)
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Attendre plus longtemps avant de retryer (cold start + email)
+      const waitTime = Math.min(3000 * originalRequest._retryCount, 8000); // 3s, 6s, 8s max
+      await new Promise((resolve) => setTimeout(resolve, waitTime));
 
       return axiosInstance(originalRequest);
     }
