@@ -15,7 +15,7 @@ const services: Service[] = [
     description:
       'Affinons les designs et le contenu que vous utilisez pour fournir des solutions numériques.',
     icon: <Database className="h-6 w-6 text-blue-600" />,
-    image: '/gallerie/1.jpg', // à remplacer par ton image
+    image: '/img1.jpg', // à remplacer par ton image
     link: '#',
   },
   {

@@ -12,7 +12,7 @@ const AboutSection: React.FC = () => {
           className="rounded-2xl shadow-lg"
         />
         <img
-          src="/gallerie/1.jpg"
+          src="/img3.jpg"
           alt="Team working"
           className="absolute bottom-[-40px] left-10 w-1/2 rounded-xl border-4 border-white shadow-md"
         />
@@ -58,7 +58,7 @@ const AboutSection: React.FC = () => {
           <button className="rounded-lg bg-blue-600 px-6 py-3 font-medium text-white transition hover:bg-blue-700">
             À Propos
           </button>
-          <span className="font-signature text-2xl italic">Signature</span>
+          {/* <span className="font-signature text-2xl italic">Signature</span> */}
         </div>
       </div>
     </section>

@@ -70,7 +70,7 @@ const Login = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-black p-4">
+    <div className="flex min-h-screen items-center justify-center bg-gray-800 p-4">
       <SEO
         title="Connexion - Votre Compte"
         description="Connectez-vous à votre compte pour accéder à votre espace personnel"
@@ -112,8 +112,8 @@ const Login = () => {
                   <div className="flex items-center justify-between">
                     <FormLabel>Mot de passe</FormLabel>
                     <Link
-                      to="/forgot-password"
-                      className="text-sm font-medium text-primary hover:underline"
+                      to="/#"
+                      className="text-sm font-medium text-blue-600 hover:underline"
                     >
                       Mot de passe oublié ?
                     </Link>
@@ -126,7 +126,10 @@ const Login = () => {
               )}
             />
 
-            <Button type="submit" className="w-full">
+            <Button
+              type="submit"
+              className="w-full bg-blue-600 text-white hover:bg-blue-900"
+            >
               Se connecter
             </Button>
           </form>
@@ -136,7 +139,7 @@ const Login = () => {
           Pas encore de compte ?{' '}
           <Link
             to="/register"
-            className="font-medium text-primary hover:underline"
+            className="font-medium text-blue-600 hover:underline"
           >
             S'inscrire
           </Link>

@@ -20,13 +20,13 @@ const Header: React.FC = () => {
   }
 
   return (
-    <header className="sticky top-0 z-50 flex flex-col bg-gray-600/50 backdrop-blur-md">
+    <header className="sticky top-0 z-50 flex flex-col bg-gray-800/50 backdrop-blur-md">
       <div className="flex items-center justify-between px-8 py-4">
         <Link to="/" className="flex items-center">
           <img src="/logo.jpg" className="h-12 w-16 rounded" alt="Logo" />
         </Link>
 
-        <nav className="hidden gap-6 md:flex">
+        <nav className="hidden gap-6 font-semibold text-white md:flex">
           <Link to="/" className="transition hover:text-blue-400">
             Accueil
           </Link>
@@ -44,7 +44,7 @@ const Header: React.FC = () => {
           ) : (
             <Button
               onClick={() => navigate('/login')}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-blue-600 text-white hover:bg-blue-900"
             >
               Connexion
             </Button>

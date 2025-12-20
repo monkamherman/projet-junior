@@ -7,25 +7,25 @@ const teamMembers = [
     name: 'FALANG MOUYEBE Emmanuel',
     role: 'Président Fondateur',
     bio: 'Fondateur et visionnaire de CENTIC, expert en organisation et développement institutionnel.',
-    image: '/img3.jpg',
+    image: '/logo.jpg',
   },
   {
     name: 'Banfack Ngueisop Arcel',
     role: 'Cellule Communication et Partenariats',
     bio: 'Responsable de la communication externe et des partenariats stratégiques de CENTIC.',
-    image: '/img1.jpg',
+    image: '/logo.jpg',
   },
   {
     name: 'Secrétaire Général',
     role: 'Administration et Coordination',
     bio: 'Charge de la coordination administrative et de la gestion interne des opérations.',
-    image: '/img3.jpg',
+    image: '/logo.jpg',
   },
   {
     name: 'Trésorier',
     role: 'Gestion Financière',
     bio: 'Responsable de la gestion financière et du budget des projets de formation.',
-    image: '/img1.jpg',
+    image: '/logo.jpg',
   },
 ];
 

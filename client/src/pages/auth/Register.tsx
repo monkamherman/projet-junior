@@ -185,7 +185,7 @@ const Register = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-black p-4">
+    <div className="flex min-h-screen items-center justify-center bg-gray-800 p-4">
       <div className="w-full max-w-md space-y-6 rounded-xl bg-white p-8 shadow-2xl">
         <div className="text-center">
           <h1 className="text-2xl font-bold">Créer un compte</h1>
@@ -340,7 +340,11 @@ const Register = () => {
               </div>
             )}
 
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            <Button
+              type="submit"
+              className="w-full bg-blue-600 text-white hover:bg-blue-900"
+              disabled={isSubmitting}
+            >
               {isSubmitting
                 ? 'Traitement en cours...'
                 : otpSent
@@ -354,7 +358,7 @@ const Register = () => {
           Déjà un compte ?{' '}
           <Link
             to="/login"
-            className="font-medium text-primary hover:underline"
+            className="font-medium text-blue-600 hover:underline"
           >
             Se connecter
           </Link>

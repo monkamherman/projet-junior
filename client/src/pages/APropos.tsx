@@ -75,22 +75,7 @@ const APropos: React.FC = () => {
       image: '/etudiante.jpg',
       reverse: false,
     },
-    {
-      title: 'Organisation de CENTIC',
-      icon: (
-        <FaBriefcase style={{ fontSize: 50, color: theme.colors.primary }} />
-      ),
-      content: {
-        president: 'Président Fondateur : FALANG MOUYEBE Emmanuel',
-        secretaire: 'Secrétaire Général',
-        tresorier: 'Trésorier',
-        technique: 'Cellule Technique et Pédagogique',
-        communication:
-          'Cellule Communication et Partenariats : Mr Banfack Ngueisop Arcel',
-      },
-      image: '/gallerie/4.jpg',
-      reverse: true,
-    },
+
     {
       title: 'Notre Vision',
       icon: <FaUsers style={{ fontSize: 50, color: theme.colors.primary }} />,

@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import React from 'react';
 import { RouterProvider } from 'react-router-dom';
+import { PWAInstallButton } from './components/PWAInstallButton';
 import { theme } from './theme';
 
 // Créer un client React Query
@@ -25,6 +26,7 @@ const App: React.FC = () => {
       <MantineProvider theme={theme}>
         <AuthProvider>
           <Notifications position="top-right" />
+          <PWAInstallButton />
           <RouterProvider router={router} />
           <Toaster />
           <ReactQueryDevtools initialIsOpen={false} />

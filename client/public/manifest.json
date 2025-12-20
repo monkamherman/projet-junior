@@ -1,0 +1,46 @@
+{
+  "name": "CENTIC - Centre d'Éducation aux Outils de NTIC",
+  "short_name": "CENTIC",
+  "description": "Centre d'Éducation aux Outils de NTIC. Promotion de l'accès et de l'utilisation des Nouvelles Technologies dans la région du Septentrion au Cameroun.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563EB",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "fr",
+  "dir": "ltr",
+  "categories": ["education", "technology", "nonprofit"],
+  "icons": [
+    {
+      "src": "/logo.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Formations",
+      "short_name": "Formations",
+      "description": "Découvrez nos formations aux métiers du numérique",
+      "url": "/formations",
+      "icons": [{"src": "/logo.jpg", "sizes": "96x96"}]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/img1.jpg",
+      "sizes": "1280x720",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "Page d'accueil de CENTIC"
+    }
+  ]
+}
