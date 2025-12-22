@@ -5,6 +5,7 @@ import {
   PaiementHistoryPage,
   PaiementPage,
   PaymentConfirmationPage,
+  PaymentMethodSelectionPage,
 } from '@/features/paiements';
 import { ProfilePage } from '@/features/profile/pages/ProfilePage';
 import UserLayout from '@/layouts/UserLayout';
@@ -47,6 +48,11 @@ const RouterInstance = createBrowserRouter([
       {
         path: 'a-propos',
         element: <APropos />,
+      },
+      // Route de sélection de méthode de paiement
+      {
+        path: 'formations/:id/paiement/selection',
+        element: <PaymentMethodSelectionPage />,
       },
       // Route de paiement
       {

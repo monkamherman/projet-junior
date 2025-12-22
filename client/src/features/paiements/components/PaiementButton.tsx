@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface PaiementButtonProps {
   formationId: string;
@@ -10,21 +10,21 @@ interface PaiementButtonProps {
   isLoading?: boolean;
 }
 
-export function PaiementButton({ 
-  formationId, 
-  montant, 
+export function PaiementButton({
+  formationId,
+  montant,
   className = '',
   disabled = false,
-  isLoading = false
+  isLoading = false,
 }: PaiementButtonProps) {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    navigate(`/formations/${formationId}/paiement`);
+    navigate(`/formations/${formationId}/paiement/selection`);
   };
 
   return (
-    <Button 
+    <Button
       onClick={handleClick}
       className={`w-full ${className}`}
       disabled={disabled || isLoading}
