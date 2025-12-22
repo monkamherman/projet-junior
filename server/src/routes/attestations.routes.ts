@@ -112,4 +112,11 @@ router.post("/generer", genererMonAttestation);
  */
 router.get("/:id/telecharger", telechargerMonAttestation);
 
+/**
+ * @route GET /api/attestations/:id/generer-pdf
+ * @desc Générer et télécharger un PDF d'attestation à la volée
+ * @access Privé
+ */
+router.get("/:id/generer-pdf", genererPdfAttestation);
+
 export default router;

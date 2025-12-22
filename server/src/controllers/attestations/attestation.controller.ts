@@ -326,3 +326,86 @@ export const telechargerMonAttestation = async (
     });
   }
 };
+
+/**
+ * Générer et télécharger un PDF d'attestation à la volée
+ */
+export const genererPdfAttestation = async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Non autorisé" });
+    }
+
+    const { id } = req.params;
+
+    const attestation = await prisma.attestation.findUnique({
+      where: { id },
+      include: {
+        inscription: {
+          include: {
+            utilisateur: true,
+            formation: true,
+          },
+        },
+      },
+    });
+
+    if (!attestation) {
+      return res.status(404).json({ message: "Attestation non trouvée" });
+    }
+
+    // Vérifier que l'utilisateur est bien le propriétaire
+    if (attestation.inscription.utilisateurId !== req.user.id) {
+      return res
+        .status(403)
+        .json({ message: "Non autorisé à accéder à cette attestation" });
+    }
+
+    // Générer le PDF à la volée
+    const certificateData = await generateCertificate(attestation.inscription);
+
+    // Mettre à jour le statut de l'attestation
+    await prisma.attestation.update({
+      where: { id },
+      data: {
+        statut: "TELECHARGEE",
+        dateTelechargement: new Date(),
+      },
+    });
+
+    // Renvoyer le PDF généré
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="attestation-${attestation.numero}.pdf"`
+    );
+
+    // Si le service de certificat renvoie une URL, on récupère le fichier
+    if (certificateData.url) {
+      const filePath = path.join(
+        __dirname,
+        "../../public",
+        certificateData.url.replace("/public", "")
+      );
+
+      if (fs.existsSync(filePath)) {
+        const fileStream = fs.createReadStream(filePath);
+        fileStream.pipe(res);
+      } else {
+        return res.status(404).json({ message: "Fichier PDF non trouvé" });
+      }
+    } else {
+      return res
+        .status(500)
+        .json({ message: "Format de certificat non supporté" });
+    }
+  } catch (error) {
+    console.error("Erreur lors de la génération du PDF:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Erreur inconnue";
+    res.status(500).json({
+      message: "Erreur lors de la génération du PDF",
+      error: errorMessage,
+    });
+  }
+};

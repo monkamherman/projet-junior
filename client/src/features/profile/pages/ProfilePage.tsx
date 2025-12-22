@@ -52,52 +52,44 @@ export function ProfilePage() {
 
   // Fonction de téléchargement d'attestation
   const handleDownloadAttestation = async (attestationId: string) => {
-    console.log("Téléchargement de l'attestation:", attestationId);
+    console.log(
+      "Génération et téléchargement de l'attestation:",
+      attestationId
+    );
     notifications.show({
-      title: 'Téléchargement',
-      message: 'Téléchargement du certificat en cours...',
+      title: 'Génération',
+      message: 'Génération du certificat en cours...',
       color: 'blue',
     });
 
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:10000';
+      const token = localStorage.getItem('token');
 
-      // Récupérer les détails de l'attestation pour obtenir l'URL du PDF
-      const attestationResponse = await fetch(
-        `${apiUrl}/api/attestations/${attestationId}`,
+      // Appeler l'API pour générer et télécharger le PDF à la volée
+      const response = await fetch(
+        `${apiUrl}/api/attestations/${attestationId}/generer-pdf`,
         {
           method: 'GET',
           headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`,
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
           },
         }
       );
 
-      if (!attestationResponse.ok) {
-        throw new Error('Attestation non trouvée');
+      if (!response.ok) {
+        throw new Error(`Erreur HTTP: ${response.status}`);
       }
 
-      const attestation = await attestationResponse.json();
-      console.log('Détails attestation:', attestation);
+      // Récupérer le PDF généré
+      const blob = await response.blob();
 
-      // Télécharger le PDF depuis l'URL de l'attestation
-      const pdfResponse = await fetch(`${apiUrl}${attestation.urlPdf}`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
-
-      if (!pdfResponse.ok) {
-        throw new Error('Erreur lors du téléchargement du PDF');
-      }
-
-      // Créer un blob et télécharger le fichier
-      const blob = await pdfResponse.blob();
+      // Créer un lien de téléchargement
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `attestation-${attestation.numero || attestationId}.pdf`;
+      a.download = `attestation-${attestationId}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -105,15 +97,15 @@ export function ProfilePage() {
 
       notifications.show({
         title: 'Succès',
-        message: 'Certificat téléchargé avec succès',
+        message: 'Certificat généré et téléchargé avec succès',
         color: 'green',
         icon: <IconCheck size={16} />,
       });
     } catch (error) {
-      console.error('Erreur de téléchargement:', error);
+      console.error('Erreur de génération/téléchargement:', error);
       notifications.show({
         title: 'Erreur',
-        message: 'Erreur lors du téléchargement du certificat',
+        message: 'Erreur lors de la génération du certificat',
         color: 'red',
         icon: <IconX size={16} />,
       });

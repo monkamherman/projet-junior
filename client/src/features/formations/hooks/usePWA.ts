@@ -10,6 +10,7 @@ export const usePWA = () => {
   const [isInstalled, setIsInstalled] = useState(false);
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string>('');
 
   useEffect(() => {
     // Vérifier si l'app est déjà installée
@@ -17,8 +18,39 @@ export const usePWA = () => {
       const isStandalone = window.matchMedia(
         '(display-mode: standalone)'
       ).matches;
-      const isInWebAppiOS = (window.navigator as any).standalone === true;
-      setIsInstalled(isStandalone || isInWebAppiOS);
+      const isInWebAppiOS =
+        (window.navigator as { standalone?: boolean }).standalone === true;
+      const isPWA = window.matchMedia('(display-mode: minimal-ui)').matches;
+
+      setIsInstalled(isStandalone || isInWebAppiOS || isPWA);
+
+      // Debug information
+      const isHTTPS = location.protocol === 'https:';
+      const isLocalhost = location.hostname === 'localhost';
+      const isFirefox = navigator.userAgent.includes('Firefox');
+      const isChrome =
+        navigator.userAgent.includes('Chrome') &&
+        !navigator.userAgent.includes('Edg');
+      const isEdge = navigator.userAgent.includes('Edg');
+
+      const info = {
+        userAgent: navigator.userAgent,
+        isStandalone,
+        isInWebAppiOS,
+        isPWA,
+        isHTTPS,
+        isLocalhost,
+        isFirefox,
+        isChrome,
+        isEdge,
+        hasServiceWorker: 'serviceWorker' in navigator,
+        hasBeforeInstallPrompt: 'onbeforeinstallprompt' in window,
+        canInstall:
+          (isHTTPS || isLocalhost) &&
+          (isChrome || isEdge) &&
+          'onbeforeinstallprompt' in window,
+      };
+      setDebugInfo(JSON.stringify(info, null, 2));
     };
 
     checkIfInstalled();
@@ -76,6 +108,7 @@ export const usePWA = () => {
     isInstallable,
     isInstalled,
     installApp,
+    debugInfo,
   };
 };
 
