@@ -117,6 +117,6 @@ router.get("/:id/telecharger", telechargerMonAttestation);
  * @desc Générer et télécharger un PDF d'attestation à la volée
  * @access Privé
  */
-router.get("/:id/generer-pdf", genererPdfAttestation);
+router.get("/:id/generer-pdf", genererMonAttestation);
 
 export default router;
