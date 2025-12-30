@@ -10,11 +10,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import type { PaiementRecord } from '@/features/paiements/services/paiementService';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, Phone } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
+import type { PaymentDetails } from './types';
 
 // Schéma de validation avec Zod
 const paymentFormSchema = z.object({
@@ -32,11 +34,8 @@ type PaymentFormValues = z.infer<typeof paymentFormSchema>;
 interface PaymentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onPaymentSubmit: (data: {
-    method: 'orange' | 'mtn';
-    phoneNumber: string;
-    amount: number;
-  }) => Promise<void>;
+  onPaymentSubmit: (data: PaymentDetails) => Promise<PaiementRecord>;
+  formationId: string;
   defaultAmount?: number;
   isProcessing?: boolean;
 }
@@ -45,6 +44,7 @@ export function PaymentDialog({
   open,
   onOpenChange,
   onPaymentSubmit,
+  formationId,
   defaultAmount = 1000,
   isProcessing = false,
 }: PaymentDialogProps) {
@@ -82,18 +82,27 @@ export function PaymentDialog({
   }, [open, defaultAmount, reset]);
 
   const onSubmit = async (data: PaymentFormValues) => {
+    if (!formationId) {
+      console.error(
+        "L'identifiant de formation est requis pour enregistrer le paiement."
+      );
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       console.log('Soumission du formulaire de paiement:', data);
 
-      // Appeler la fonction de soumission avec les données
-      await onPaymentSubmit({
+      const paymentDetails: PaymentDetails = {
         method: data.paymentMethod,
         phoneNumber: data.phoneNumber,
         amount: data.amount,
-      });
+        formationId,
+      };
 
-      // La fermeture de la boîte de dialogue est gérée dans le parent
+      await onPaymentSubmit(paymentDetails);
+
+      onOpenChange(false);
     } catch (error) {
       console.error('Erreur lors de la soumission du formulaire:', error);
       // Ne pas fermer la boîte de dialogue en cas d'erreur

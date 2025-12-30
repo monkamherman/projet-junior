@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
 import { z } from "zod";
+import { generatePaymentReceiptPdf } from "../../services/paymentReceipt.service";
 
 const prisma = new PrismaClient();
 
@@ -286,6 +287,64 @@ export const listerPaiementsUtilisateur = async (
       error instanceof Error ? error.message : "Erreur inconnue";
     res.status(500).json({
       message: "Erreur lors de la récupération des paiements",
+      error: errorMessage,
+    });
+  }
+};
+
+/**
+ * Télécharge le reçu PDF d'un paiement
+ */
+export const telechargerRecuPaiement = async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Non autorisé" });
+    }
+
+    const { id } = req.params;
+
+    const paiement = await prisma.paiement.findUnique({
+      where: { id },
+      include: {
+        formation: {
+          select: { id: true, titre: true, prix: true },
+        },
+        utilisateur: {
+          select: {
+            id: true,
+            prenom: true,
+            nom: true,
+            email: true,
+            telephone: true,
+          },
+        },
+      },
+    });
+
+    if (!paiement) {
+      return res.status(404).json({ message: "Paiement non trouvé" });
+    }
+
+    if (req.user.role !== "ADMIN" && paiement.utilisateurId !== req.user.id) {
+      return res.status(403).json({ message: "Accès refusé à ce reçu" });
+    }
+
+    const pdfBuffer = await generatePaymentReceiptPdf({
+      ...paiement,
+    });
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="recu-${paiement.reference}.pdf"`
+    );
+    return res.send(pdfBuffer);
+  } catch (error) {
+    console.error("Erreur lors du téléchargement du reçu:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Erreur inconnue";
+    return res.status(500).json({
+      message: "Erreur lors de la génération du reçu",
       error: errorMessage,
     });
   }

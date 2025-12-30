@@ -1,12 +1,9 @@
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Award, Loader2 } from 'lucide-react';
-import { useState } from 'react';
-import {
-  useGenererAttestation,
-  useVerifierEligibilite,
-} from '../api/attestations.api';
+import { Award, Download, Loader2, ReceiptText } from 'lucide-react';
 import { PaymentDialog } from './PaymentDialog';
+import type { PaymentDetails } from './types';
+import { useAttestationFlow } from './useAttestationFlow';
 
 interface AttestationButtonProps {
   formationId: string;
@@ -17,132 +14,169 @@ export function AttestationButton({
   formationId,
   className = '',
 }: AttestationButtonProps) {
-  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false); // Nouvel état pour gérer le traitement
-
   const { toast } = useToast();
-  const { data: eligibilite, isLoading: verificationLoading } =
-    useVerifierEligibilite(formationId);
-
   const {
-    mutateAsync: genererAttestation,
-    isPending: isGeneratingAttestation,
-  } = useGenererAttestation();
+    status,
+    isDialogOpen,
+    isCheckingEligibility,
+    attestation,
+    eligibility,
+    lastPaiement,
+    openPaymentDialog,
+    closePaymentDialog,
+    submitPayment,
+    downloadAttestation,
+    downloadReceipt,
+  } = useAttestationFlow(formationId);
 
-  const handlePaymentSubmit = async (data: {
-    method: 'orange' | 'mtn';
-    phoneNumber: string;
-    amount: number;
-  }) => {
-    console.log('Données de paiement reçues:', data);
+  const isProcessingPayment =
+    status === 'processing_payment' || status === 'generating_attestation';
+  const isLoading = isCheckingEligibility || isProcessingPayment;
 
-    // Commencer le traitement
-    setIsProcessingPayment(true);
-
-    // Fermer la boîte de dialogue immédiatement
-    setIsPaymentDialogOpen(false);
-
+  const handlePrimaryAction = async () => {
     try {
-      // Étape 1: Simulation de paiement (1.5s)
-      toast({
-        title: 'Traitement du paiement...',
-        description: `Veuillez confirmer le paiement de ${data.amount} FCFA sur votre téléphone.`,
-      });
-
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // Étape 2: Après simulation réussie, générer l'attestation
-      console.log(
-        "Simulation de paiement réussie, génération de l'attestation..."
-      );
-
-      await genererAttestation(formationId);
-
-      // Étape 3: Afficher le succès
-      toast({
-        title: 'Paiement réussi !',
-        description: `Paiement de ${data.amount} FCFA effectué avec succès via ${data.method === 'orange' ? 'Orange Money' : 'MTN Mobile Money'} au ${data.phoneNumber}. L'attestation a été générée.`,
-      });
+      await openPaymentDialog();
     } catch (error) {
-      console.error('Erreur lors du processus:', error);
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Impossible d'ouvrir le dialogue de paiement.";
       toast({
         title: 'Erreur',
-        description: 'Une erreur est survenue lors du traitement.',
+        description: message,
         variant: 'destructive',
       });
-    } finally {
-      // Arrêter le traitement
-      setIsProcessingPayment(false);
     }
   };
 
-  const handleButtonClick = () => {
-    console.log(
-      'Ouverture du dialogue de paiement pour formation:',
-      formationId
-    );
-    setIsPaymentDialogOpen(true);
+  const handlePaymentSubmit = async (paymentDetails: PaymentDetails) => {
+    try {
+      const { paiement } = await submitPayment(paymentDetails);
+
+      toast({
+        title: 'Paiement enregistré',
+        description:
+          'Votre paiement a été validé et le traitement de votre attestation est terminé.',
+      });
+
+      await downloadReceipt(paiement.id);
+      toast({
+        title: 'Reçu téléchargé',
+        description: 'Le reçu de paiement a été téléchargé avec succès.',
+      });
+
+      return paiement;
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Le paiement a échoué. Veuillez réessayer.';
+      toast({
+        title: 'Échec du paiement',
+        description: message,
+        variant: 'destructive',
+      });
+      throw error;
+    }
   };
 
-  if (verificationLoading) {
+  const handleDownloadAttestation = async () => {
+    if (!attestation) return;
+
+    try {
+      await downloadAttestation(attestation.id);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Impossible de télécharger l'attestation.";
+      toast({
+        title: 'Erreur',
+        description: message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDownloadReceipt = async () => {
+    try {
+      await downloadReceipt();
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : 'Aucun reçu disponible pour ce paiement.';
+      toast({
+        title: 'Erreur',
+        description: message,
+        variant: 'destructive',
+      });
+    }
+  };
+
+  if (attestation) {
     return (
-      <Button disabled className={className}>
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        Vérification...
-      </Button>
+      <div className={`flex flex-wrap gap-3 ${className}`}>
+        <Button
+          onClick={handleDownloadAttestation}
+          className="flex items-center gap-2"
+        >
+          <Download className="h-4 w-4" />
+          Télécharger mon attestation
+        </Button>
+        {lastPaiement && (
+          <Button
+            type="button"
+            variant="outline"
+            className="flex items-center gap-2"
+            onClick={handleDownloadReceipt}
+          >
+            <ReceiptText className="h-4 w-4" />
+            Reçu de paiement
+          </Button>
+        )}
+      </div>
     );
   }
 
-  if (!eligibilite || !eligibilite.eligible) {
-    if (eligibilite && eligibilite.attestation) {
-      return (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => window.open(`/mes-attestations`, '_blank')}
-          className={className}
-        >
-          <Award className="mr-2 h-4 w-4" />
-          Télécharger l'attestation
-        </Button>
-      );
-    }
-
+  if (eligibility && eligibility.eligible === false) {
     return (
       <Button disabled className={className}>
         <Award className="mr-2 h-4 w-4" />
-        Non disponible
+        {eligibility.reason ?? 'Non éligible'}
       </Button>
     );
   }
-
-  // Calculer l'état de chargement
-  const isLoading = isProcessingPayment || isGeneratingAttestation;
 
   return (
     <>
       <Button
-        onClick={handleButtonClick}
-        disabled={verificationLoading || isLoading}
+        onClick={handlePrimaryAction}
+        disabled={isLoading}
         className={`flex items-center gap-2 ${className}`}
       >
         {isLoading ? (
           <>
             <Loader2 className="h-4 w-4 animate-spin" />
-            Traitement...
+            Traitement en cours...
           </>
         ) : (
           <>
             <Award className="h-4 w-4" />
-            S'inscrire maintenant
+            Obtenir mon attestation
           </>
         )}
       </Button>
 
       <PaymentDialog
-        open={isPaymentDialogOpen}
-        onOpenChange={setIsPaymentDialogOpen}
+        open={isDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            closePaymentDialog();
+          }
+        }}
         onPaymentSubmit={handlePaymentSubmit}
+        formationId={formationId}
         defaultAmount={5000}
         isProcessing={isProcessingPayment}
       />

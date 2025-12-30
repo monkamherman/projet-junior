@@ -4,6 +4,7 @@ import {
   creerPaiement,
   getStatutPaiement,
   listerPaiementsUtilisateur,
+  telechargerRecuPaiement,
 } from "../controllers/paiements/paiement.controller";
 import { authMiddleware } from "../middlewares/auth.middleware";
 
@@ -24,7 +25,10 @@ router.get("/", listerPaiementsUtilisateur);
 // Route spécifique pour le frontend - mes paiements
 router.get("/mes-paiements", listerPaiementsUtilisateur);
 
-// Obtenir le statut d'un paiement
+// Télécharger le reçu d'un paiement
+router.get("/:id/recu", telechargerRecuPaiement);
+
+// Obtenir le statut d'un paiement par référence
 router.get("/:reference", getStatutPaiement);
 
 export default router;

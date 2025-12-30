@@ -1,0 +1,96 @@
+import type { PaiementRecord } from '@/features/paiements/services/paiementService';
+
+// Types pour les méthodes de paiement
+export type PaymentMethod = 'orange' | 'mtn';
+
+export interface PaymentDetails {
+  method: PaymentMethod;
+  phoneNumber: string;
+  amount: number;
+  formationId: string;
+}
+
+export interface EligibiliteResult {
+  eligible: boolean;
+  attestation?: {
+    id: string;
+    url: string;
+    generatedAt: string;
+  };
+  reason?: string;
+}
+
+export interface PaymentResult {
+  success: boolean;
+  transactionId?: string;
+  attestationId?: string; // ID de l'attestation générée
+  error?: string;
+}
+
+export type PaymentStatus =
+  | 'idle'
+  | 'dialog_open'
+  | 'processing_payment'
+  | 'generating_attestation'
+  | 'success'
+  | 'error';
+
+// Alias pour rétrocompatibilité
+export type PaymentData = Omit<PaymentDetails, 'formationId'>;
+
+export interface PaymentSubmitResult {
+  paiement: PaiementRecord;
+  attestation?: Attestation;
+}
+
+// Réponse d'éligibilité (ancien type, à supprimer après migration)
+export interface EligibilityResponse {
+  eligible: boolean;
+  message: string;
+  attestation?: Attestation;
+  dateFin?: string;
+  inscription?: {
+    id: string;
+    dateInscription: string;
+  };
+}
+
+// Modèle d'attestation
+export interface Attestation {
+  id: string;
+  numero: string;
+  urlPdf: string;
+  statut: 'GENEREE' | 'ENVOYEE' | 'TELECHARGEE';
+  dateEmission: string;
+  dateTelechargement?: string;
+  inscription?: {
+    id: string;
+    dateInscription: string;
+    formation: {
+      id: string;
+      titre: string;
+      description: string;
+      dateDebut: string;
+      dateFin: string;
+      prix: number;
+    };
+  };
+}
+
+// Props pour le composant AttestationButton
+export interface AttestationButtonProps {
+  formationId: string;
+  className?: string;
+  onSuccess?: (attestation: Attestation) => void;
+  onError?: (error: Error) => void;
+}
+
+// Props pour le composant PaymentDialog
+export interface PaymentDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onPaymentSubmit: (data: PaymentDetails) => Promise<PaiementRecord>;
+  formationId: string;
+  defaultAmount?: number;
+  isProcessing?: boolean;
+}

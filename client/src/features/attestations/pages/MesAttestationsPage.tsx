@@ -15,7 +15,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useMesAttestations } from '../api/attestations.api';
+import { useMesAttestations } from '../hooks/useAttestation';
 
 export const MesAttestationsPage = () => {
   const navigate = useNavigate();
