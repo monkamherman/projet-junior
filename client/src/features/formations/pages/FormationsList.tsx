@@ -1,11 +1,17 @@
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Pencil, Plus, RefreshCw, Search, Trash2 } from 'lucide-react';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+
+// Import des composants UI
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AttestationButton } from '@/features/attestations/components/AttestationButton';
+
+// Import des hooks personnalisés
 import { useDeleteFormation, useFormations } from '../hooks/useFormations';
 
 // Composants UI personnalisés pour remplacer les composants manquants
@@ -42,29 +48,6 @@ const TableCell = ({
   children: React.ReactNode;
   className?: string;
 }) => <td className={`p-2 ${className}`}>{children}</td>;
-
-const Badge = ({
-  variant = 'default',
-  children,
-}: {
-  variant?: string;
-  children: React.ReactNode;
-}) => {
-  const baseStyles = 'px-2 py-1 text-xs rounded-full';
-  const variants = {
-    default: 'bg-blue-100 text-blue-800',
-    secondary: 'bg-gray-100 text-gray-800',
-    outline: 'bg-white border border-gray-300 text-gray-700',
-  };
-
-  return (
-    <span
-      className={`${baseStyles} ${variants[variant as keyof typeof variants] || variants.default}`}
-    >
-      {children}
-    </span>
-  );
-};
 
 const AlertDialog = ({
   open,
@@ -379,6 +362,7 @@ function FormationsListContent() {
                           <Pencil className="h-4 w-4" />
                           <span className="sr-only">Modifier</span>
                         </Button>
+
                         <Button
                           variant="ghost"
                           size="icon"
@@ -388,6 +372,12 @@ function FormationsListContent() {
                           <Trash2 className="h-4 w-4" />
                           <span className="sr-only">Supprimer</span>
                         </Button>
+
+                        <AttestationButton
+                          formationId={formation.id}
+                          dateFin={formation.dateFin}
+                          className="h-8 w-8 p-0"
+                        />
                       </div>
                     </TableCell>
                   </TableRow>

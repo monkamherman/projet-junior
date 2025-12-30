@@ -1,64 +1,88 @@
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { useToast } from '@/components/ui/use-toast';
-import {
-  AlertTriangle,
-  Award,
-  CheckCircle,
-  Clock,
-  Download,
-  Loader2,
-} from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { Award, Loader2 } from 'lucide-react';
+import { useState } from 'react';
 import {
   useGenererAttestation,
   useVerifierEligibilite,
 } from '../api/attestations.api';
+import { PaymentDialog } from './PaymentDialog';
 
 interface AttestationButtonProps {
   formationId: string;
-  dateFin: string;
   className?: string;
 }
 
 export function AttestationButton({
   formationId,
-  dateFin,
   className = '',
 }: AttestationButtonProps) {
-  const { toast } = useToast();
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false); // Nouvel état pour gérer le traitement
 
+  const { toast } = useToast();
   const { data: eligibilite, isLoading: verificationLoading } =
     useVerifierEligibilite(formationId);
-  const genererAttestation = useGenererAttestation();
 
-  const handleGenererAttestation = async () => {
+  const {
+    mutateAsync: genererAttestation,
+    isPending: isGeneratingAttestation,
+  } = useGenererAttestation();
+
+  const handlePaymentSubmit = async (data: {
+    method: 'orange' | 'mtn';
+    phoneNumber: string;
+    amount: number;
+  }) => {
+    console.log('Données de paiement reçues:', data);
+
+    // Commencer le traitement
+    setIsProcessingPayment(true);
+
+    // Fermer la boîte de dialogue immédiatement
+    setIsPaymentDialogOpen(false);
+
     try {
-      await genererAttestation.mutateAsync(formationId);
+      // Étape 1: Simulation de paiement (1.5s)
       toast({
-        title: 'Attestation générée',
-        description: 'Votre attestation a été générée avec succès!',
+        title: 'Traitement du paiement...',
+        description: `Veuillez confirmer le paiement de ${data.amount} FCFA sur votre téléphone.`,
       });
-    } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Une erreur est survenue lors de la génération de l'attestation.";
+
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // Étape 2: Après simulation réussie, générer l'attestation
+      console.log(
+        "Simulation de paiement réussie, génération de l'attestation..."
+      );
+
+      await genererAttestation(formationId);
+
+      // Étape 3: Afficher le succès
+      toast({
+        title: 'Paiement réussi !',
+        description: `Paiement de ${data.amount} FCFA effectué avec succès via ${data.method === 'orange' ? 'Orange Money' : 'MTN Mobile Money'} au ${data.phoneNumber}. L'attestation a été générée.`,
+      });
+    } catch (error) {
+      console.error('Erreur lors du processus:', error);
       toast({
         title: 'Erreur',
-        description: errorMessage,
+        description: 'Une erreur est survenue lors du traitement.',
         variant: 'destructive',
       });
+    } finally {
+      // Arrêter le traitement
+      setIsProcessingPayment(false);
     }
   };
 
-  // Vérifier si la formation est terminée
-  const estFormationTerminee = new Date() >= new Date(dateFin);
+  const handleButtonClick = () => {
+    console.log(
+      'Ouverture du dialogue de paiement pour formation:',
+      formationId
+    );
+    setIsPaymentDialogOpen(true);
+  };
 
   if (verificationLoading) {
     return (
@@ -69,87 +93,59 @@ export function AttestationButton({
     );
   }
 
-  // Si la formation n'est pas terminée
-  if (!estFormationTerminee) {
-    return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button disabled className={className}>
-              <Clock className="mr-2 h-4 w-4" />
-              En attente
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>L'attestation sera disponible après la fin de la formation</p>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Fin: {new Date(dateFin).toLocaleDateString('fr-FR')}
-            </p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
-  }
-
-  // Si non éligible pour une autre raison
-  if (eligibilite && !eligibilite.eligible) {
-    if (eligibilite.attestation) {
-      // Attestation déjà générée
+  if (!eligibilite || !eligibilite.eligible) {
+    if (eligibilite && eligibilite.attestation) {
       return (
-        <div className="flex items-center gap-2">
-          <Badge variant="default" className="flex items-center gap-1">
-            <CheckCircle className="h-3 w-3" />
-            Disponible
-          </Badge>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => window.open(`/mes-attestations`, '_blank')}
-            className={className}
-          >
-            <Download className="mr-2 h-4 w-4" />
-            Voir
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => window.open(`/mes-attestations`, '_blank')}
+          className={className}
+        >
+          <Award className="mr-2 h-4 w-4" />
+          Télécharger l'attestation
+        </Button>
       );
     }
 
-    // Autre raison de non-éligibilité
     return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button disabled className={className}>
-              <AlertTriangle className="mr-2 h-4 w-4" />
-              Non disponible
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>{eligibilite.message}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <Button disabled className={className}>
+        <Award className="mr-2 h-4 w-4" />
+        Non disponible
+      </Button>
     );
   }
 
-  // Si éligible pour générer l'attestation
+  // Calculer l'état de chargement
+  const isLoading = isProcessingPayment || isGeneratingAttestation;
+
   return (
-    <Button
-      onClick={handleGenererAttestation}
-      disabled={genererAttestation.isPending}
-      className={`flex items-center gap-2 ${className}`}
-    >
-      {genererAttestation.isPending ? (
-        <>
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Génération...
-        </>
-      ) : (
-        <>
-          <Award className="h-4 w-4" />
-          Générer l'attestation
-        </>
-      )}
-    </Button>
+    <>
+      <Button
+        onClick={handleButtonClick}
+        disabled={verificationLoading || isLoading}
+        className={`flex items-center gap-2 ${className}`}
+      >
+        {isLoading ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Traitement...
+          </>
+        ) : (
+          <>
+            <Award className="h-4 w-4" />
+            S'inscrire maintenant
+          </>
+        )}
+      </Button>
+
+      <PaymentDialog
+        open={isPaymentDialogOpen}
+        onOpenChange={setIsPaymentDialogOpen}
+        onPaymentSubmit={handlePaymentSubmit}
+        defaultAmount={5000}
+        isProcessing={isProcessingPayment}
+      />
+    </>
   );
 }

@@ -15,6 +15,17 @@ const Home: React.FC = () => {
             /> */}
 
       <Hero />
+      {/* <PaymentDialog
+        open={true}
+        onOpenChange={() => {}}
+        onPaymentSubmit={async (data) => {
+          // Logique de traitement du paiement
+          console.log('Détails du paiement:', data);
+          // Ici, vous pourriez appeler une API pour traiter le paiement
+          // Par exemple :
+          // await processPayment(data);
+        }}
+      /> */}
 
       <AboutSection />
 
