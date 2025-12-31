@@ -34,16 +34,13 @@ export function AttestationButton({
   const isLoading = isCheckingEligibility || isProcessingPayment;
 
   const handlePrimaryAction = async () => {
-    try {
-      await openPaymentDialog();
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Impossible d'ouvrir le dialogue de paiement.";
+    const couldOpen = await openPaymentDialog();
+
+    if (!couldOpen && eligibility && !eligibility.eligible) {
       toast({
-        title: 'Erreur',
-        description: message,
+        title: 'Non éligible',
+        description:
+          eligibility.reason || 'Vous ne pouvez pas payer pour le moment.',
         variant: 'destructive',
       });
     }
@@ -56,13 +53,7 @@ export function AttestationButton({
       toast({
         title: 'Paiement enregistré',
         description:
-          'Votre paiement a été validé et le traitement de votre attestation est terminé.',
-      });
-
-      await downloadReceipt(paiement.id);
-      toast({
-        title: 'Reçu téléchargé',
-        description: 'Le reçu de paiement a été téléchargé avec succès.',
+          'Votre paiement a été validé. Vous pouvez maintenant télécharger le reçu.',
       });
 
       return paiement;
@@ -114,16 +105,18 @@ export function AttestationButton({
     }
   };
 
-  if (attestation) {
+  if (attestation || lastPaiement) {
     return (
       <div className={`flex flex-wrap gap-3 ${className}`}>
-        <Button
-          onClick={handleDownloadAttestation}
-          className="flex items-center gap-2"
-        >
-          <Download className="h-4 w-4" />
-          Télécharger mon attestation
-        </Button>
+        {attestation && (
+          <Button
+            onClick={handleDownloadAttestation}
+            className="flex items-center gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Télécharger mon attestation
+          </Button>
+        )}
         {lastPaiement && (
           <Button
             type="button"
@@ -139,11 +132,11 @@ export function AttestationButton({
     );
   }
 
-  if (eligibility && eligibility.eligible === false) {
+  if (eligibility && eligibility.eligible === false && eligibility.reason) {
     return (
       <Button disabled className={className}>
         <Award className="mr-2 h-4 w-4" />
-        {eligibility.reason ?? 'Non éligible'}
+        {eligibility.reason}
       </Button>
     );
   }

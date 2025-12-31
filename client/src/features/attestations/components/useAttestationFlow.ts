@@ -101,7 +101,7 @@ export function useAttestationFlow(formationId: string) {
       setError(null);
 
       try {
-        // 1. Sauvegarder le paiement pour conserver les informations du dialogue
+        // 1. Sauvegarder le paiement en utilisant le service qui gère la transformation
         const paiement = await paiementService.creerPaiement({
           formationId: paymentDetails.formationId,
           montant: paymentDetails.amount,

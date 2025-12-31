@@ -13,12 +13,16 @@
     "start": "node dist/app.js",
     "start:prod": "NODE_ENV=production PORT=10000 node dist/index.js",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate deploy"
+    "prisma:migrate": "prisma migrate deploy",
+    "prisma:seed": "ts-node prisma/seed.ts"
   },
   "keywords": [],
   "author": "",
   "license": "herman dev",
   "description": "",
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
   "devDependencies": {
     "@eslint/js": "^9.5.0",
     "@types/compression": "^1.8.1",

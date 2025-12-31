@@ -1,5 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { Request, Response } from "express";
+import fs from "fs";
+import path from "path";
 import sendMail from "../../nodemailer/sendmail";
 import { generateCertificate } from "../../services/certificateService";
 
@@ -64,64 +66,64 @@ export const verifierEligibiliteAttestation = async (
 
     const { formationId } = req.params;
 
-    // Vérifier l'inscription et le paiement
-    const inscription = await prisma.inscription.findFirst({
+    // 1. Vérifier si une inscription validée avec un paiement existe déjà
+    const inscriptionValidee = await prisma.inscription.findFirst({
       where: {
         utilisateurId: req.user.id,
         formationId,
         statut: "VALIDEE",
+        paiement: {
+          statut: "VALIDE",
+        },
       },
       include: {
-        paiement: true,
         formation: true,
         attestation: true,
       },
     });
 
-    if (!inscription) {
-      return res.status(404).json({
-        message: "Inscription non trouvée ou non validée",
-        eligible: false,
-      });
+    if (inscriptionValidee) {
+      // Si une attestation existe déjà, l'utilisateur peut la télécharger
+      if (inscriptionValidee.attestation) {
+        return res.json({
+          eligible: false,
+          reason: "Attestation déjà disponible",
+          attestation: inscriptionValidee.attestation,
+        });
+      }
+
+      // Si la formation n'est pas terminée
+      const maintenant = new Date();
+      const dateFinFormation = new Date(inscriptionValidee.formation.dateFin);
+      if (maintenant < dateFinFormation) {
+        return res.json({
+          eligible: false,
+          reason: `Formation en cours. Attestation disponible après le ${dateFinFormation.toLocaleDateString()}`,
+        });
+      }
+
+      // Si le paiement est fait mais l'attestation pas encore générée (cas rare)
+      return res.json({ eligible: true });
     }
 
-    // Vérifier si le paiement est validé
-    if (!inscription.paiement || inscription.paiement.statut !== "VALIDE") {
-      return res.status(400).json({
-        message: "Le paiement doit être validé pour obtenir une attestation",
-        eligible: false,
-      });
-    }
-
-    // Vérifier si une attestation existe déjà
-    if (inscription.attestation) {
-      return res.json({
-        message: "Attestation déjà générée",
-        eligible: false,
-        attestation: inscription.attestation,
-      });
-    }
-
-    // Vérifier si la formation est terminée
-    const maintenant = new Date();
-    const dateFinFormation = new Date(inscription.formation.dateFin);
-
-    if (maintenant < dateFinFormation) {
-      return res.status(400).json({
-        message: "La formation n'est pas encore terminée",
-        eligible: false,
-        dateFin: inscription.formation.dateFin,
-      });
-    }
-
-    res.json({
-      message: "Éligible pour la génération d'attestation",
-      eligible: true,
-      inscription: {
-        id: inscription.id,
-        dateInscription: inscription.dateInscription,
+    // 2. Vérifier si un paiement en attente ou en cours existe déjà pour éviter les doublons
+    const paiementExistant = await prisma.paiement.findFirst({
+      where: {
+        utilisateurId: req.user.id,
+        formationId,
+        statut: { in: ["EN_ATTENTE", "EN_COURS"] },
       },
     });
+
+    if (paiementExistant) {
+      return res.json({
+        eligible: false,
+        reason: "Un paiement est déjà en cours de traitement.",
+      });
+    }
+
+    // 3. Si aucune des conditions ci-dessus n'est remplie, l'utilisateur est éligible pour payer.
+    res.json({ eligible: true });
   } catch (error) {
     console.error("Erreur lors de la vérification d'éligibilité:", error);
     const errorMessage =
