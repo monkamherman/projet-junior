@@ -3,8 +3,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.telechargerMonAttestation = exports.genererMonAttestation = exports.verifierEligibiliteAttestation = exports.getMesAttestations = void 0;
+exports.genererPdfAttestation = exports.telechargerMonAttestation = exports.genererMonAttestation = exports.verifierEligibiliteAttestation = exports.getMesAttestations = void 0;
 const client_1 = require("@prisma/client");
+const fs_1 = __importDefault(require("fs"));
+const path_1 = __importDefault(require("path"));
 const sendmail_1 = __importDefault(require("../../nodemailer/sendmail"));
 const certificateService_1 = require("../../services/certificateService");
 const prisma = new client_1.PrismaClient();
@@ -60,58 +62,58 @@ const verifierEligibiliteAttestation = async (req, res) => {
             return res.status(401).json({ message: "Non autorisé" });
         }
         const { formationId } = req.params;
-        // Vérifier l'inscription et le paiement
-        const inscription = await prisma.inscription.findFirst({
+        // 1. Vérifier si une inscription validée avec un paiement existe déjà
+        const inscriptionValidee = await prisma.inscription.findFirst({
             where: {
                 utilisateurId: req.user.id,
                 formationId,
                 statut: "VALIDEE",
+                paiement: {
+                    statut: "VALIDE",
+                },
             },
             include: {
-                paiement: true,
                 formation: true,
                 attestation: true,
             },
         });
-        if (!inscription) {
-            return res.status(404).json({
-                message: "Inscription non trouvée ou non validée",
-                eligible: false,
-            });
+        if (inscriptionValidee) {
+            // Si une attestation existe déjà, l'utilisateur peut la télécharger
+            if (inscriptionValidee.attestation) {
+                return res.json({
+                    eligible: false,
+                    reason: "Attestation déjà disponible",
+                    attestation: inscriptionValidee.attestation,
+                });
+            }
+            // Si la formation n'est pas terminée
+            const maintenant = new Date();
+            const dateFinFormation = new Date(inscriptionValidee.formation.dateFin);
+            if (maintenant < dateFinFormation) {
+                return res.json({
+                    eligible: false,
+                    reason: `Formation en cours. Attestation disponible après le ${dateFinFormation.toLocaleDateString()}`,
+                });
+            }
+            // Si le paiement est fait mais l'attestation pas encore générée (cas rare)
+            return res.json({ eligible: true });
         }
-        // Vérifier si le paiement est validé
-        if (!inscription.paiement || inscription.paiement.statut !== "VALIDE") {
-            return res.status(400).json({
-                message: "Le paiement doit être validé pour obtenir une attestation",
-                eligible: false,
-            });
-        }
-        // Vérifier si une attestation existe déjà
-        if (inscription.attestation) {
-            return res.json({
-                message: "Attestation déjà générée",
-                eligible: false,
-                attestation: inscription.attestation,
-            });
-        }
-        // Vérifier si la formation est terminée
-        const maintenant = new Date();
-        const dateFinFormation = new Date(inscription.formation.dateFin);
-        if (maintenant < dateFinFormation) {
-            return res.status(400).json({
-                message: "La formation n'est pas encore terminée",
-                eligible: false,
-                dateFin: inscription.formation.dateFin,
-            });
-        }
-        res.json({
-            message: "Éligible pour la génération d'attestation",
-            eligible: true,
-            inscription: {
-                id: inscription.id,
-                dateInscription: inscription.dateInscription,
+        // 2. Vérifier si un paiement en attente ou en cours existe déjà pour éviter les doublons
+        const paiementExistant = await prisma.paiement.findFirst({
+            where: {
+                utilisateurId: req.user.id,
+                formationId,
+                statut: { in: ["EN_ATTENTE", "EN_COURS"] },
             },
         });
+        if (paiementExistant) {
+            return res.json({
+                eligible: false,
+                reason: "Un paiement est déjà en cours de traitement.",
+            });
+        }
+        // 3. Si aucune des conditions ci-dessus n'est remplie, l'utilisateur est éligible pour payer.
+        res.json({ eligible: true });
     }
     catch (error) {
         console.error("Erreur lors de la vérification d'éligibilité:", error);
@@ -286,4 +288,73 @@ const telechargerMonAttestation = async (req, res) => {
     }
 };
 exports.telechargerMonAttestation = telechargerMonAttestation;
+/**
+ * Générer et télécharger un PDF d'attestation à la volée
+ */
+const genererPdfAttestation = async (req, res) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ message: "Non autorisé" });
+        }
+        const { id } = req.params;
+        const attestation = await prisma.attestation.findUnique({
+            where: { id },
+            include: {
+                inscription: {
+                    include: {
+                        utilisateur: true,
+                        formation: true,
+                    },
+                },
+            },
+        });
+        if (!attestation) {
+            return res.status(404).json({ message: "Attestation non trouvée" });
+        }
+        // Vérifier que l'utilisateur est bien le propriétaire
+        if (attestation.inscription.utilisateurId !== req.user.id) {
+            return res
+                .status(403)
+                .json({ message: "Non autorisé à accéder à cette attestation" });
+        }
+        // Générer le PDF à la volée
+        const certificateData = await (0, certificateService_1.generateCertificate)(attestation.inscription);
+        // Mettre à jour le statut de l'attestation
+        await prisma.attestation.update({
+            where: { id },
+            data: {
+                statut: "TELECHARGEE",
+                dateTelechargement: new Date(),
+            },
+        });
+        // Renvoyer le PDF généré
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `attachment; filename="attestation-${attestation.numero}.pdf"`);
+        // Si le service de certificat renvoie une URL, on récupère le fichier
+        if (certificateData.url) {
+            const filePath = path_1.default.join(__dirname, "../../public", certificateData.url.replace("/public", ""));
+            if (fs_1.default.existsSync(filePath)) {
+                const fileStream = fs_1.default.createReadStream(filePath);
+                fileStream.pipe(res);
+            }
+            else {
+                return res.status(404).json({ message: "Fichier PDF non trouvé" });
+            }
+        }
+        else {
+            return res
+                .status(500)
+                .json({ message: "Format de certificat non supporté" });
+        }
+    }
+    catch (error) {
+        console.error("Erreur lors de la génération du PDF:", error);
+        const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
+        res.status(500).json({
+            message: "Erreur lors de la génération du PDF",
+            error: errorMessage,
+        });
+    }
+};
+exports.genererPdfAttestation = genererPdfAttestation;
 //# sourceMappingURL=attestation.controller.js.map

@@ -1,14 +1,18 @@
 import type { PaiementRecord } from '@/features/paiements/services/paiementService';
 
-// Types pour les méthodes de paiement
-export type PaymentMethod = 'orange' | 'mtn';
+// Types pour les méthodes de paiement (français unifié)
+export type MethodePaiement = 'orange' | 'mtn';
 
-export interface PaymentDetails {
-  method: PaymentMethod;
-  phoneNumber: string;
-  amount: number;
+export interface DetailsPaiement {
+  methode: MethodePaiement;
+  numeroTelephone: string;
+  montant: number;
   formationId: string;
 }
+
+// Alias pour rétrocompatibilité (à supprimer progressivement)
+export type PaymentMethod = MethodePaiement;
+export type PaymentDetails = DetailsPaiement;
 
 export interface EligibiliteResult {
   eligible: boolean;

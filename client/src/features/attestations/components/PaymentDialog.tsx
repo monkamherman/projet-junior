@@ -94,9 +94,9 @@ export function PaymentDialog({
       console.log('Soumission du formulaire de paiement:', data);
 
       const paymentDetails: PaymentDetails = {
-        method: data.paymentMethod,
-        phoneNumber: data.phoneNumber,
-        amount: data.amount,
+        methode: data.paymentMethod,
+        numeroTelephone: data.phoneNumber,
+        montant: data.amount,
         formationId,
       };
 

@@ -3,14 +3,13 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const client_1 = require("@prisma/client");
 const express_1 = require("express");
 const path_1 = __importDefault(require("path"));
 const attestation_controller_1 = require("../controllers/attestations/attestation.controller");
 const formation_controller_1 = require("../controllers/formations/formation.controller");
+const prisma_1 = __importDefault(require("../lib/prisma"));
 const auth_middleware_1 = __importDefault(require("../middlewares/auth.middleware"));
 const router = (0, express_1.Router)();
-const prisma = new client_1.PrismaClient();
 // Route publique pour la simulation d'attestation
 router.post("/generate", formation_controller_1.generateAttestation);
 // Route pour servir les fichiers PDF d'attestation
@@ -48,7 +47,7 @@ router.get("/:id", async (req, res) => {
             return res.status(401).json({ message: "Non autorisé" });
         }
         const { id } = req.params;
-        const attestation = await prisma.attestation.findUnique({
+        const attestation = await prisma_1.default.attestation.findUnique({
             where: { id },
             include: {
                 inscription: {
@@ -95,5 +94,11 @@ router.post("/generer", attestation_controller_1.genererMonAttestation);
  * @access Privé
  */
 router.get("/:id/telecharger", attestation_controller_1.telechargerMonAttestation);
+/**
+ * @route GET /api/attestations/:id/generer-pdf
+ * @desc Générer et télécharger un PDF d'attestation à la volée
+ * @access Privé
+ */
+router.get("/:id/generer-pdf", attestation_controller_1.genererMonAttestation);
 exports.default = router;
 //# sourceMappingURL=attestations.routes.js.map

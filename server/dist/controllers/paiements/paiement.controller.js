@@ -23,9 +23,10 @@ var __importStar = (this && this.__importStar) || function (mod) {
     return result;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.listerPaiementsUtilisateur = exports.getStatutPaiement = exports.creerPaiement = void 0;
+exports.telechargerRecuPaiement = exports.listerPaiementsUtilisateur = exports.getStatutPaiement = exports.creerPaiement = void 0;
 const client_1 = require("@prisma/client");
 const zod_1 = require("zod");
+const paymentReceipt_service_1 = require("../../services/paymentReceipt.service");
 const prisma = new client_1.PrismaClient();
 // Schéma de validation pour la création d'un paiement
 const createPaiementSchema = zod_1.z.object({
@@ -264,4 +265,53 @@ const listerPaiementsUtilisateur = async (req, res) => {
     }
 };
 exports.listerPaiementsUtilisateur = listerPaiementsUtilisateur;
+/**
+ * Télécharge le reçu PDF d'un paiement
+ */
+const telechargerRecuPaiement = async (req, res) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ message: "Non autorisé" });
+        }
+        const { id } = req.params;
+        const paiement = await prisma.paiement.findUnique({
+            where: { id },
+            include: {
+                formation: {
+                    select: { id: true, titre: true, prix: true },
+                },
+                utilisateur: {
+                    select: {
+                        id: true,
+                        prenom: true,
+                        nom: true,
+                        email: true,
+                        telephone: true,
+                    },
+                },
+            },
+        });
+        if (!paiement) {
+            return res.status(404).json({ message: "Paiement non trouvé" });
+        }
+        if (req.user.role !== "ADMIN" && paiement.utilisateurId !== req.user.id) {
+            return res.status(403).json({ message: "Accès refusé à ce reçu" });
+        }
+        const pdfBuffer = await (0, paymentReceipt_service_1.generatePaymentReceiptPdf)({
+            ...paiement,
+        });
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", `attachment; filename="recu-${paiement.reference}.pdf"`);
+        return res.send(pdfBuffer);
+    }
+    catch (error) {
+        console.error("Erreur lors du téléchargement du reçu:", error);
+        const errorMessage = error instanceof Error ? error.message : "Erreur inconnue";
+        return res.status(500).json({
+            message: "Erreur lors de la génération du reçu",
+            error: errorMessage,
+        });
+    }
+};
+exports.telechargerRecuPaiement = telechargerRecuPaiement;
 //# sourceMappingURL=paiement.controller.js.map

@@ -147,6 +147,7 @@ export function AttestationButton({
         onClick={handlePrimaryAction}
         disabled={isLoading}
         className={`flex items-center gap-2 ${className}`}
+        data-payment-button
       >
         {isLoading ? (
           <>

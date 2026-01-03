@@ -26,7 +26,7 @@ interface Formation {
   organisme?: string;
 }
 
-interface Payment {
+interface Paiement {
   transactionId?: string;
   success: boolean;
   methode: string;
@@ -42,7 +42,7 @@ interface Attestation {
 
 interface LocationState {
   formation: Formation;
-  payment: Payment;
+  payment: Paiement;
   attestation: Attestation;
 }
 

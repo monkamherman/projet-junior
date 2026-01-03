@@ -13,26 +13,8 @@ const express_1 = __importDefault(require("express"));
 const express_cache_controller_1 = __importDefault(require("express-cache-controller"));
 const helmet_1 = __importDefault(require("helmet"));
 const morgan_1 = __importDefault(require("morgan"));
-const redis_1 = require("redis");
 const constants_1 = require("./core/constants");
 const routes_1 = __importDefault(require("./routes"));
-// Création du client Redis (optionnel en dev/tests)
-let redisReady = false;
-const redisClient = (0, redis_1.createClient)({ url: "redis://localhost:6379" });
-redisClient.on("error", (err) => {
-    console.warn("Redis indisponible:", err.message);
-});
-(async () => {
-    try {
-        await redisClient.connect();
-        redisReady = true;
-        console.log("Connexion Redis établie avec succès.");
-    }
-    catch (_err) {
-        redisReady = false;
-        console.warn("Redis non connecté, démarrage sans rate limiting Redis.");
-    }
-})();
 const morganStream = {
     write: (message) => {
         (0, env_var_1.logger)("http", message.trim());
@@ -79,22 +61,35 @@ exports.app.use((0, helmet_1.default)({
     crossOriginEmbedderPolicy: false,
     crossOriginOpenerPolicy: false,
 }));
-// Rate limiting (après les routes critiques)
+// Rate limiting simple en mémoire (remplace Redis)
+const rateLimitMap = new Map();
+// Nettoyage périodique du rate limiting (toutes les 5 minutes)
+setInterval(() => {
+    const now = Date.now();
+    for (const [key, data] of rateLimitMap.entries()) {
+        if (now > data.resetTime) {
+            rateLimitMap.delete(key);
+        }
+    }
+}, 5 * 60 * 1000);
+// Rate limiting simplifié
 exports.app.use(async (req, res, next) => {
-    if (!redisReady)
-        return next();
     const ip = req.ip;
+    const now = Date.now();
     const key = `rate_limit:${ip}`;
     const limit = constants_1.ONE_HUNDRED;
-    const current = await redisClient.incr(key);
-    if (current === 1) {
-        await redisClient.expire(key, constants_1.SIXTY);
+    const windowMs = constants_1.SIXTY * 1000;
+    const existing = rateLimitMap.get(key);
+    if (!existing || now > existing.resetTime) {
+        rateLimitMap.set(key, { count: 1, resetTime: now + windowMs });
+        return next();
     }
-    if (current > limit) {
+    if (existing.count >= limit) {
         return res
             .status(429)
             .json({ error: "Trop de requêtes depuis cette adresse IP" });
     }
+    existing.count++;
     next();
 });
 // Middleware de compression

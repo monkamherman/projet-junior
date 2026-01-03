@@ -104,9 +104,9 @@ export function useAttestationFlow(formationId: string) {
         // 1. Sauvegarder le paiement en utilisant le service qui gère la transformation
         const paiement = await paiementService.creerPaiement({
           formationId: paymentDetails.formationId,
-          montant: paymentDetails.amount,
-          methode: paymentDetails.method,
-          numeroTelephone: paymentDetails.phoneNumber,
+          montant: paymentDetails.montant,
+          methode: paymentDetails.methode,
+          numeroTelephone: paymentDetails.numeroTelephone,
         });
         setLastPaiement(paiement);
 

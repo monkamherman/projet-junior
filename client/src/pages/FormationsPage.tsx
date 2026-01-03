@@ -1,13 +1,8 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/contexts/AuthContext';
-import {
-  generateAttestation,
-  getAllFormations,
-  simulatePayment,
-} from '@/features/formations/api/formations';
-import { useToast } from '@/hooks/use-toast';
+import { AttestationButton } from '@/features/attestations/components/AttestationButton';
+import { getAllFormations } from '@/features/formations/api/formations';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import {
@@ -16,7 +11,6 @@ import {
   ChevronLeft,
   Clock,
   DollarSign,
-  Play,
   Users,
 } from 'lucide-react';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -119,8 +113,7 @@ const FormationCard: React.FC<{
 const FormationDetail: React.FC<{
   formation: Formation;
   onBack: () => void;
-  onPayment: (formation: Formation) => void;
-}> = ({ formation, onBack, onPayment }) => {
+}> = ({ formation, onBack }) => {
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       {/* Header */}
@@ -308,17 +301,11 @@ const FormationDetail: React.FC<{
                   Accès illimité à la formation
                 </p>
 
-                <Button
-                  onClick={() => onPayment(formation)}
+                {/* Intégrer le bouton d'attestation ici */}
+                <AttestationButton
+                  formationId={formation.id}
                   className="w-full bg-blue-600 hover:bg-blue-700"
-                  size="lg"
-                  disabled={formation.statut !== 'OUVERTE'}
-                >
-                  <Play className="mr-2" size={20} />
-                  {formation.statut === 'OUVERTE'
-                    ? "S'inscrire maintenant"
-                    : 'Formation non disponible'}
-                </Button>
+                />
 
                 <div className="space-y-1 text-xs text-gray-500">
                   <p>• Accès immédiat après paiement</p>
@@ -344,7 +331,6 @@ export default function FormationsPage() {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { id } = useParams();
-  const { user } = useAuth();
 
   const loadFormations = useCallback(async () => {
     try {
@@ -481,78 +467,6 @@ Module 5: Projet Final
     navigate('/formations');
   };
 
-  const { toast } = useToast();
-
-  const handlePayment = async (formation: Formation) => {
-    try {
-      // Vérifier si l'utilisateur est connecté
-      if (!user) {
-        setError('Vous devez être connecté pour effectuer un paiement.');
-        return;
-      }
-
-      const userId = user.id;
-      const paymentResult = await simulatePayment(formation.id, userId);
-
-      // Si le paiement est réussi, générer l'attestation
-      if (paymentResult.success) {
-        try {
-          const attestationResult = await generateAttestation(
-            formation.id,
-            userId
-          );
-
-          toast({
-            title: 'Succès !',
-            description:
-              'Votre attestation a été générée et envoyée par email.',
-            variant: 'default',
-          });
-
-          // Rediriger vers la page de confirmation avec les détails
-          navigate(`/formations/${formation.id}/confirmation`, {
-            state: {
-              formation,
-              payment: paymentResult,
-              attestation: attestationResult,
-            },
-          });
-        } catch (attestationError: Error) {
-          console.error(
-            "Erreur lors de la génération de l'attestation:",
-            attestationError
-          );
-
-          if (attestationError.message?.includes('déjà été générée')) {
-            toast({
-              title: 'Information',
-              description: 'Une attestation existe déjà pour cette formation.',
-              variant: 'default',
-            });
-          } else {
-            toast({
-              title: 'Erreur',
-              description: "Erreur lors de la génération de l'attestation.",
-              variant: 'destructive',
-            });
-          }
-
-          setError("Erreur lors de la génération de l'attestation.");
-        }
-      } else {
-        setError('Le paiement a échoué. Veuillez réessayer.');
-        toast({
-          title: 'Erreur de paiement',
-          description: 'Le paiement a échoué. Veuillez réessayer.',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      console.error('Erreur lors du paiement:', error);
-      setError('Erreur lors du traitement du paiement. Veuillez réessayer.');
-    }
-  };
-
   // Afficher un avertissement si on est en mode démo, mais continuer d'afficher les formations
   const showDemoWarning = error && error.includes('Mode démonstration');
 
@@ -584,7 +498,6 @@ Module 5: Projet Final
       <FormationDetail
         formation={selectedFormation}
         onBack={handleBackToList}
-        onPayment={handlePayment}
       />
     );
   }

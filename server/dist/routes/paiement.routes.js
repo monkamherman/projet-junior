@@ -15,7 +15,9 @@ router.post("/", paiement_controller_1.creerPaiement);
 router.get("/", paiement_controller_1.listerPaiementsUtilisateur);
 // Route spécifique pour le frontend - mes paiements
 router.get("/mes-paiements", paiement_controller_1.listerPaiementsUtilisateur);
-// Obtenir le statut d'un paiement
+// Télécharger le reçu d'un paiement
+router.get("/:id/recu", paiement_controller_1.telechargerRecuPaiement);
+// Obtenir le statut d'un paiement par référence
 router.get("/:reference", paiement_controller_1.getStatutPaiement);
 exports.default = router;
 //# sourceMappingURL=paiement.routes.js.map

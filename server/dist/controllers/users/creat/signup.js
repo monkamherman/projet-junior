@@ -6,11 +6,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.signup = signup;
 exports.verifyOTP = verifyOTP;
 exports.sendOTP = sendOTP;
-const client_1 = require("@prisma/client");
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const zod_1 = require("zod");
+const prisma_1 = __importDefault(require("../../../lib/prisma"));
 const sendmail_1 = __importDefault(require("../../../nodemailer/sendmail"));
-const prisma = new client_1.PrismaClient();
 // Fonction pour valider la force du mot de passe
 const validatePassword = (password) => {
     if (password.length < 6) {
@@ -120,7 +119,7 @@ async function signup(req, res) {
             return sendOTP(req, res);
         }
         // Vérifier si l'utilisateur existe déjà
-        const existingUser = await prisma.utilisateur.findUnique({
+        const existingUser = await prisma_1.default.utilisateur.findUnique({
             where: { email },
             select: { id: true },
         });
@@ -134,7 +133,7 @@ async function signup(req, res) {
         }
         // Vérifier si un OTP valide existe pour cet email
         const now = new Date();
-        const otpRecord = await prisma.oTP.findFirst({
+        const otpRecord = await prisma_1.default.oTP.findFirst({
             where: {
                 email,
                 code: otp,
@@ -151,14 +150,14 @@ async function signup(req, res) {
             });
         }
         // Marquer l'OTP comme utilisé
-        await prisma.oTP.update({
+        await prisma_1.default.oTP.update({
             where: { id: otpRecord.id },
             data: { validated: true },
         });
         // Hasher le mot de passe
         const hashedPassword = await bcrypt_1.default.hash(motDePasse, 12);
         // Créer l'utilisateur dans une transaction pour assurer l'intégrité des données
-        await prisma.$transaction(async (tx) => {
+        await prisma_1.default.$transaction(async (tx) => {
             // Créer l'utilisateur
             await tx.utilisateur.create({
                 data: {
@@ -210,7 +209,7 @@ async function verifyOTP(req, res) {
             });
         }
         // Vérifier si l'utilisateur existe déjà
-        const existingUser = await prisma.utilisateur.findUnique({
+        const existingUser = await prisma_1.default.utilisateur.findUnique({
             where: { email },
         });
         if (existingUser) {
@@ -222,7 +221,7 @@ async function verifyOTP(req, res) {
         }
         // Vérifier si l'OTP est valide
         const now = new Date();
-        const otpRecord = await prisma.oTP.findFirst({
+        const otpRecord = await prisma_1.default.oTP.findFirst({
             where: {
                 email,
                 code: otp,
@@ -240,7 +239,7 @@ async function verifyOTP(req, res) {
         // Hasher le mot de passe
         const hashedPassword = await bcrypt_1.default.hash(motDePasse, 10);
         // Créer l'utilisateur
-        const user = await prisma.utilisateur.create({
+        const user = await prisma_1.default.utilisateur.create({
             data: {
                 email,
                 nom,
@@ -250,7 +249,7 @@ async function verifyOTP(req, res) {
             },
         });
         // Marquer l'OTP comme utilisé
-        await prisma.oTP.update({
+        await prisma_1.default.oTP.update({
             where: { id: otpRecord.id },
             data: { validated: true },
         });
@@ -297,7 +296,7 @@ async function sendOTP(req, res) {
         const now = new Date();
         const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
         // Vérifier si l'utilisateur existe déjà
-        const existingUser = await prisma.utilisateur.findUnique({
+        const existingUser = await prisma_1.default.utilisateur.findUnique({
             where: { email },
             select: { id: true },
         });
@@ -310,7 +309,7 @@ async function sendOTP(req, res) {
             });
         }
         // Vérifier le nombre de tentatives récentes pour cet email
-        const recentAttempts = await prisma.oTP.count({
+        const recentAttempts = await prisma_1.default.oTP.count({
             where: {
                 email,
                 createdAt: { gte: oneHourAgo },
@@ -325,7 +324,7 @@ async function sendOTP(req, res) {
             });
         }
         // Vérifier si un OTP valide existe déjà pour cet email
-        const existingValidOTP = await prisma.oTP.findFirst({
+        const existingValidOTP = await prisma_1.default.oTP.findFirst({
             where: {
                 email,
                 expiresAt: { gt: now },
@@ -346,7 +345,7 @@ async function sendOTP(req, res) {
             otpCode = generateOTP();
             expiresAt = new Date(now.getTime() + OTP_EXPIRATION);
             // Stocker le nouvel OTP dans la base
-            await prisma.oTP.create({
+            await prisma_1.default.oTP.create({
                 data: {
                     email,
                     code: otpCode,
@@ -385,15 +384,18 @@ L'équipe Centic`;
         const response = {
             success: true,
             message: "Un code de vérification a été envoyé à votre adresse email.",
-            // En développement, on peut renvoyer l'OTP pour faciliter les tests
-            ...(process.env.NODE_ENV !== "production" && {
-                debug: {
-                    otp: otpCode,
-                    expiresAt: expiresAt.toISOString(),
-                    email: email,
-                },
-            }),
         };
+        // Toujours inclure l'OTP en développement ou si le mode demo est activé
+        if (process.env.NODE_ENV !== "production" || sendResult.otpCode) {
+            response.debug = {
+                otp: otpCode,
+                expiresAt: expiresAt.toISOString(),
+                email: email,
+                note: sendResult.otpCode
+                    ? "Mode demo - OTP affiché pour tests"
+                    : "Mode développement",
+            };
+        }
         console.log(`[OTP] Réponse envoyée au client pour ${email}`);
         return res.status(200).json(response);
     }
