@@ -34,42 +34,46 @@ export async function getProfile(req: AuthenticatedRequest, res: Response) {
       return res.status(404).json({ message: "Utilisateur non trouvé." });
     }
 
-    // Récupérer les formations de l'utilisateur
+    // Récupérer les formations de l'utilisateur (sans inclure la formation pour éviter les erreurs)
     const inscriptions = await prisma.inscription.findMany({
       where: {
         utilisateurId: req.user.id,
         statut: "VALIDEE",
       },
+    });
+
+    // Récupérer les formations séparément pour éviter les erreurs de null
+    const formationIds = inscriptions.map((i) => i.formationId).filter(Boolean);
+    const formationsData = await prisma.formation.findMany({
+      where: {
+        id: { in: formationIds as string[] },
+      },
       include: {
-        formation: {
-          include: {
-            formateur: {
-              select: {
-                id: true,
-                nom: true,
-                prenom: true,
-              },
-            },
+        formateur: {
+          select: {
+            id: true,
+            nom: true,
+            prenom: true,
           },
         },
       },
     });
 
-    // Transformer les inscriptions en formations
-    const formations = inscriptions.map((inscription) => ({
-      id: inscription.formation.id,
-      titre: inscription.formation.titre,
-      description: inscription.formation.description,
-      dateDebut: inscription.formation.dateDebut,
+    // Combiner les données
+    const formations = formationsData.map((formation) => ({
+      id: formation.id,
+      titre: formation.titre,
+      description: formation.description,
+      dateDebut: formation.dateDebut,
       duree: Math.ceil(
-        (new Date(inscription.formation.dateFin).getTime() -
-          new Date(inscription.formation.dateDebut).getTime()) /
+        (new Date(formation.dateFin).getTime() -
+          new Date(formation.dateDebut).getTime()) /
           (1000 * 60 * 60 * 24)
       ), // Durée en jours
       statut:
-        new Date() > new Date(inscription.formation.dateFin)
+        new Date() > new Date(formation.dateFin)
           ? ("TERMINÉ" as const)
-          : new Date() >= new Date(inscription.formation.dateDebut)
+          : new Date() >= new Date(formation.dateDebut)
             ? ("EN_COURS" as const)
             : ("NON_COMMENCÉ" as const),
     }));

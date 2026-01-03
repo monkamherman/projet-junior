@@ -375,7 +375,7 @@ function FormationsListContent() {
 
                         <AttestationButton
                           formationId={formation.id}
-                          dateFin={formation.dateFin}
+                          formationPrix={formation.prix}
                           className="h-8 w-8 p-0"
                         />
                       </div>

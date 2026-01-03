@@ -10,7 +10,6 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import type { PaiementRecord } from '@/features/paiements/services/paiementService';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Loader2, Phone } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -34,9 +33,9 @@ type PaymentFormValues = z.infer<typeof paymentFormSchema>;
 interface PaymentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onPaymentSubmit: (data: PaymentDetails) => Promise<PaiementRecord>;
+  onPaymentSubmit: (details: PaymentDetails) => Promise<void>;
   formationId: string;
-  defaultAmount?: number;
+  formationPrix: number;
   isProcessing?: boolean;
 }
 
@@ -45,7 +44,7 @@ export function PaymentDialog({
   onOpenChange,
   onPaymentSubmit,
   formationId,
-  defaultAmount = 1000,
+  formationPrix,
   isProcessing = false,
 }: PaymentDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -61,25 +60,29 @@ export function PaymentDialog({
     resolver: zodResolver(paymentFormSchema),
     defaultValues: {
       phoneNumber: '',
-      amount: defaultAmount,
+      amount: formationPrix,
       paymentMethod: 'orange',
     },
   });
 
   const selectedMethod = watch('paymentMethod');
-  const currentAmount = watch('amount');
+
+  // Mettre à jour le montant quand le prix de la formation change
+  useEffect(() => {
+    setValue('amount', formationPrix);
+  }, [formationPrix, setValue]);
 
   useEffect(() => {
     // Réinitialiser le formulaire quand la boîte de dialogue s'ouvre
     if (open) {
       reset({
         phoneNumber: '',
-        amount: defaultAmount,
+        amount: formationPrix,
         paymentMethod: 'orange',
       });
       setIsSubmitting(false);
     }
-  }, [open, defaultAmount, reset]);
+  }, [open, formationPrix, reset]);
 
   const onSubmit = async (data: PaymentFormValues) => {
     if (!formationId) {
@@ -211,16 +214,15 @@ export function PaymentDialog({
                 <Input
                   id="amount"
                   type="number"
-                  step="100"
-                  min="500"
-                  className="pl-10"
-                  {...register('amount', { valueAsNumber: true })}
+                  value={formationPrix}
+                  readOnly
+                  className="cursor-not-allowed border-gray-200 bg-gray-50 pl-10"
                   disabled={isSubmitting || isProcessing}
                 />
               </div>
-              {errors.amount && (
-                <p className="text-sm text-red-500">{errors.amount.message}</p>
-              )}
+              <p className="text-sm text-gray-500">
+                Montant fixe pour cette formation
+              </p>
             </div>
           </div>
 
@@ -245,7 +247,7 @@ export function PaymentDialog({
                   Traitement...
                 </>
               ) : (
-                `Confirmer le paiement de ${currentAmount} FCFA`
+                `Confirmer le paiement de ${formationPrix} FCFA`
               )}
             </Button>
           </DialogFooter>

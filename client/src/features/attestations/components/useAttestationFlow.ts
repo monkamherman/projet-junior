@@ -104,9 +104,12 @@ export function useAttestationFlow(formationId: string) {
         // 1. Sauvegarder le paiement en utilisant le service qui gère la transformation
         const paiement = await paiementService.creerPaiement({
           formationId: paymentDetails.formationId,
-          montant: paymentDetails.montant,
-          methode: paymentDetails.methode,
-          numeroTelephone: paymentDetails.numeroTelephone,
+          montant: paymentDetails.montant || paymentDetails.amount || 0,
+          methode: (paymentDetails.methode || paymentDetails.method) as
+            | 'orange'
+            | 'mtn',
+          numeroTelephone:
+            paymentDetails.numeroTelephone || paymentDetails.phoneNumber || '',
         });
         setLastPaiement(paiement);
 
@@ -135,14 +138,30 @@ export function useAttestationFlow(formationId: string) {
           paiement,
           attestation: generatedAttestation,
         };
-      } catch (err) {
-        const normalizedError =
-          err instanceof Error
-            ? err
-            : new Error('Erreur lors du traitement du paiement');
-        setError(normalizedError);
+      } catch (error: any) {
+        console.error('Erreur lors du paiement:', error);
+
+        // Gérer le cas où l'utilisateur est déjà inscrit
+        if (
+          error.response?.status === 400 &&
+          error.response?.data?.alreadyEnrolled
+        ) {
+          setError(
+            new Error(
+              'Vous êtes déjà inscrit à cette formation. Vous pouvez télécharger votre attestation depuis votre espace.'
+            )
+          );
+          // Ne pas rediriger - laisser l'utilisateur voir les options disponibles
+          throw error;
+        }
+
+        setError(
+          error.response?.data?.message ||
+            error.message ||
+            'Erreur lors du traitement du paiement. Veuillez réessayer.'
+        );
         setStatus('error');
-        throw normalizedError;
+        throw error;
       }
     },
     [formationId]

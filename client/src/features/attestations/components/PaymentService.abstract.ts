@@ -1,4 +1,4 @@
-import { PaymentDetails, PaymentResult } from './types';
+import type { PaymentDetails, PaymentResult } from './types';
 
 /**
  * Classe abstraite pour le service de paiement
@@ -53,9 +53,14 @@ export class MobileMoneyPaymentService extends PaymentService {
     // Simulation du délai réseau
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
+    // Utiliser les propriétés françaises unifiées avec fallback sur les anciennes
+    const phoneNumber = details.numeroTelephone || details.phoneNumber || '';
+    const amount = details.montant || details.amount || 0;
+    const method = details.methode || details.method || 'orange';
+
     // Simulation de réponse réussie
     console.log(
-      `Paiement simulé: ${details.amount}FCFA via ${details.method} au ${details.phoneNumber}`
+      `Paiement simulé: ${amount}FCFA via ${method} au ${phoneNumber}`
     );
 
     return {
@@ -69,12 +74,21 @@ export class MobileMoneyPaymentService extends PaymentService {
    */
   validatePaymentDetails(details: PaymentDetails): boolean {
     // Format des numéros de téléphone Orange et MTN en Côte d'Ivoire
-    const phoneRegex = /^(77|76|70|78|75)[0-9]{7}$/;
+    // Ajout du préfixe 69 pour Orange Money
+    const phoneRegex = /^(69|77|76|70|78|75)[0-9]{7}$/;
+
+    // Utiliser les propriétés françaises unifiées avec fallback sur les anciennes
+    const phoneNumber = details.numeroTelephone || details.phoneNumber || '';
+    const amount = details.montant || details.amount || 0;
+    const method = details.methode || details.method || 'orange';
+
+    console.log('Validation paiement:', { phoneNumber, amount, method });
+    console.log('Regex test:', phoneRegex.test(phoneNumber));
 
     return (
-      phoneRegex.test(details.phoneNumber) &&
-      details.amount >= 500 && // Montant minimum
-      ['orange', 'mtn'].includes(details.method)
+      phoneRegex.test(phoneNumber) &&
+      amount >= 500 && // Montant minimum
+      ['orange', 'mtn'].includes(method)
     );
   }
 }

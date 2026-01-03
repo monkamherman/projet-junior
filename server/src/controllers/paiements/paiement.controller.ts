@@ -27,13 +27,17 @@ export const creerPaiement = async (req: Request, res: Response) => {
     }
 
     // Valider les données de la requête
+    console.log("Données reçues:", req.body);
     const validation = createPaiementSchema.safeParse(req.body);
+    console.log("Résultat validation:", validation.success);
     if (!validation.success) {
+      console.log("Erreurs de validation:", validation.error.issues);
       return res.status(400).json({
         message: "Données invalides",
         errors: validation.error.issues,
       });
     }
+    console.log("Validation réussie, données:", validation.data);
 
     const {
       formationId,
@@ -45,32 +49,43 @@ export const creerPaiement = async (req: Request, res: Response) => {
       commentaire,
     } = validation.data;
     const utilisateurId = req.user.id;
+    console.log("Utilisateur ID:", utilisateurId);
 
     // Vérifier si l'utilisateur et la formation existent
+    console.log("Vérification utilisateur et formation...");
     const [utilisateur, formation] = await Promise.all([
       prisma.utilisateur.findUnique({ where: { id: utilisateurId } }),
       prisma.formation.findUnique({ where: { id: formationId } }),
     ]);
+    console.log("Utilisateur trouvé:", !!utilisateur);
+    console.log("Formation trouvée:", !!formation);
 
     if (!utilisateur) {
+      console.log("Utilisateur non trouvé");
       return res.status(404).json({ message: "Utilisateur non trouvé" });
     }
 
     if (!formation) {
+      console.log("Formation non trouvée");
       return res.status(404).json({ message: "Formation non trouvée" });
     }
 
     // Vérifier si l'utilisateur est déjà inscrit à cette formation
+    console.log("Vérification inscription existante...");
     const inscriptionExistante = await prisma.inscription.findFirst({
       where: {
         utilisateurId,
         formationId,
       },
     });
+    console.log("Inscription existante:", !!inscriptionExistante);
 
     if (inscriptionExistante) {
+      console.log("Déjà inscrit à cette formation");
       return res.status(400).json({
-        message: "Vous êtes déjà inscrit à cette formation",
+        message:
+          "Vous êtes déjà inscrit à cette formation. Vous pouvez accéder directement à votre attestation depuis votre espace.",
+        alreadyEnrolled: true,
       });
     }
 

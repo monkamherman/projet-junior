@@ -8,6 +8,10 @@ export interface DetailsPaiement {
   numeroTelephone: string;
   montant: number;
   formationId: string;
+  // Propriétés pour rétrocompatibilité (transition)
+  phoneNumber?: string;
+  amount?: number;
+  method?: MethodePaiement;
 }
 
 // Alias pour rétrocompatibilité (à supprimer progressivement)

@@ -7,11 +7,13 @@ import { useAttestationFlow } from './useAttestationFlow';
 
 interface AttestationButtonProps {
   formationId: string;
+  formationPrix: number; // Ajout du prix
   className?: string;
 }
 
 export function AttestationButton({
   formationId,
+  formationPrix,
   className = '',
 }: AttestationButtonProps) {
   const { toast } = useToast();
@@ -48,25 +50,34 @@ export function AttestationButton({
 
   const handlePaymentSubmit = async (paymentDetails: PaymentDetails) => {
     try {
-      const { paiement } = await submitPayment(paymentDetails);
+      await submitPayment(paymentDetails);
 
       toast({
         title: 'Paiement enregistré',
         description:
           'Votre paiement a été validé. Vous pouvez maintenant télécharger le reçu.',
       });
-
-      return paiement;
     } catch (error) {
       const message =
         error instanceof Error
           ? error.message
           : 'Le paiement a échoué. Veuillez réessayer.';
-      toast({
-        title: 'Échec du paiement',
-        description: message,
-        variant: 'destructive',
-      });
+
+      // Cas spécial : utilisateur déjà inscrit
+      if (message.includes('déjà inscrit')) {
+        toast({
+          title: 'Déjà inscrit',
+          description:
+            'Vous êtes déjà inscrit à cette formation. Utilisez les boutons ci-dessous pour télécharger votre attestation et votre reçu.',
+          variant: 'default',
+        });
+      } else {
+        toast({
+          title: 'Échec du paiement',
+          description: message,
+          variant: 'destructive',
+        });
+      }
       throw error;
     }
   };
@@ -171,7 +182,7 @@ export function AttestationButton({
         }}
         onPaymentSubmit={handlePaymentSubmit}
         formationId={formationId}
-        defaultAmount={5000}
+        formationPrix={formationPrix}
         isProcessing={isProcessingPayment}
       />
     </>

@@ -1,3 +1,4 @@
+import { axiosInstance } from '@/api/api.config';
 import { getPaymentService } from './PaymentService.abstract';
 import type {
   Attestation,
@@ -19,18 +20,11 @@ export class AttestationService {
    */
   async checkEligibility(formationId: string): Promise<EligibiliteResult> {
     try {
-      const response = await fetch(
+      const response = await axiosInstance.get<EligibiliteResult>(
         `${API_BASE_URL}/verifier-eligibilite/${formationId}`
       );
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.message || "Erreur lors de la vérification d'éligibilité"
-        );
-      }
-
-      return await response.json();
+      return response.data;
     } catch (error) {
       console.error("Erreur lors de la vérification d'éligibilité:", error);
       throw new Error(
@@ -54,25 +48,17 @@ export class AttestationService {
 
     // 2. Si le paiement réussit, générer l'attestation
     try {
-      const response = await fetch(
+      const response = await axiosInstance.post<Attestation>(
         `${API_BASE_URL}/generer/${details.formationId}`,
         {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            paymentMethod: details.method,
-            phoneNumber: details.phoneNumber,
-            amount: details.amount,
-            transactionId: paymentResult.transactionId,
-          }),
+          paymentMethod: details.methode,
+          phoneNumber: details.numeroTelephone,
+          amount: details.montant,
+          transactionId: paymentResult.transactionId,
         }
       );
 
-      if (!response.ok) {
-        throw new Error("Échec de la génération de l'attestation");
-      }
-
-      const attestation = await response.json();
+      const attestation = response.data;
       return {
         result: { ...paymentResult, attestationId: attestation.id },
         attestation,
@@ -94,18 +80,14 @@ export class AttestationService {
    */
   async downloadAttestation(attestationId: string): Promise<void> {
     try {
-      const response = await fetch(
+      const response = await axiosInstance.get(
         `${API_BASE_URL}/telecharger/${attestationId}`,
         {
-          method: 'GET',
+          responseType: 'blob',
         }
       );
 
-      if (!response.ok) {
-        throw new Error("Échec du téléchargement de l'attestation");
-      }
-
-      const blob = await response.blob();
+      const blob = response.data;
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;

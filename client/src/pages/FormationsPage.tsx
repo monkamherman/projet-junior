@@ -304,6 +304,7 @@ const FormationDetail: React.FC<{
                 {/* Intégrer le bouton d'attestation ici */}
                 <AttestationButton
                   formationId={formation.id}
+                  formationPrix={formation.prix}
                   className="w-full bg-blue-600 hover:bg-blue-700"
                 />
 
