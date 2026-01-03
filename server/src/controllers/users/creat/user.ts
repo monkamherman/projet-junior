@@ -92,6 +92,23 @@ export async function getProfile(req: AuthenticatedRequest, res: Response) {
       },
     });
 
+    // Récupérer les paiements de l'utilisateur
+    const paiements = await prisma.paiement.findMany({
+      where: {
+        utilisateurId: req.user.id,
+      },
+      include: {
+        inscriptions: {
+          include: {
+            formation: true,
+          },
+        },
+      },
+      orderBy: {
+        datePaiement: "desc",
+      },
+    });
+
     // Transformer les attestations
     const attestationsFormatted = attestations.map((attestation) => ({
       id: attestation.id,
@@ -100,11 +117,25 @@ export async function getProfile(req: AuthenticatedRequest, res: Response) {
       dateDelivrance: attestation.dateEmission,
     }));
 
+    // Transformer les paiements
+    const paiementsFormatted = paiements.map((paiement) => ({
+      id: paiement.id,
+      reference: paiement.reference,
+      montant: paiement.montant,
+      methode: paiement.mode,
+      statut: paiement.statut,
+      datePaiement: paiement.datePaiement,
+      formation:
+        paiement.inscriptions?.[0]?.formation?.titre || "Formation inconnue",
+      telephone: paiement.telephone,
+    }));
+
     // Combiner les données
     const profileData = {
       ...user,
       formations,
       attestations: attestationsFormatted,
+      paiements: paiementsFormatted,
     };
 
     res.json(profileData);

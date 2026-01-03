@@ -22,6 +22,16 @@ export interface UserProfile {
     formation: string;
     dateDelivrance: string;
   }>;
+  paiements?: Array<{
+    id: string;
+    reference: string;
+    montant: number;
+    methode: string;
+    statut: string;
+    datePaiement: string;
+    formation: string;
+    telephone: string;
+  }>;
 }
 
 export interface UpdateProfileData {

@@ -1,3 +1,4 @@
+import { PaymentHistory } from '@/components/profile/PaymentHistory';
 import { LoadingOverlay } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { notifications } from '@mantine/notifications';
@@ -6,6 +7,7 @@ import {
   IconCheck,
   IconClockHour4,
   IconFileDownload,
+  IconFileText,
   IconSchool,
   IconX,
 } from '@tabler/icons-react';
@@ -39,11 +41,10 @@ export function ProfilePage() {
   };
 
   // Charger les attestations depuis la base de données
-  const { data: attestations, isLoading: _attestationsLoading } =
-    useAttestations() as {
-      data: Attestation[] | null;
-      isLoading: boolean;
-    };
+  const { data: attestations } = useAttestations() as {
+    data: Attestation[] | null;
+    isLoading: boolean;
+  };
 
   // Mettre à jour l'heure de la dernière mise à jour
 
@@ -182,6 +183,17 @@ export function ProfilePage() {
                 <IconFileDownload size={16} className="mr-2" />
                 Certificats
               </button>
+              <button
+                onClick={() => setActiveTab('paiements')}
+                className={`inline-flex items-center rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+                  activeTab === 'paiements'
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                }`}
+              >
+                <IconFileText size={16} className="mr-2" />
+                Paiements
+              </button>
             </nav>
           </div>
 
@@ -307,6 +319,12 @@ export function ProfilePage() {
                   </p>
                 </div>
               )}
+            </div>
+          )}
+
+          {activeTab === 'paiements' && (
+            <div className="space-y-4">
+              <PaymentHistory payments={profileData.paiements || []} />
             </div>
           )}
         </div>

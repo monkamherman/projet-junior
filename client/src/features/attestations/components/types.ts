@@ -47,7 +47,7 @@ export type PaymentStatus =
 export type PaymentData = Omit<PaymentDetails, 'formationId'>;
 
 export interface PaymentSubmitResult {
-  paiement: PaiementRecord;
+  paiement: PaiementRecord | null; // Permettre null pour les utilisateurs déjà inscrits
   attestation?: Attestation;
 }
 

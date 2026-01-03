@@ -1,34 +1,27 @@
 import { Router } from "express";
-import { simulatePayment } from "../controllers/formations/formation.controller";
 import {
   creerPaiement,
-  getStatutPaiement,
-  listerPaiementsUtilisateur,
-  telechargerRecuPaiement,
+  telechargerRecuPaiementTxt,
 } from "../controllers/paiements/paiement.controller";
-import { authMiddleware } from "../middlewares/auth.middleware";
+import authMiddleware from "../middlewares/auth.middleware";
 
 const router = Router();
 
-// Route publique pour la simulation de paiement
-router.post("/simulate", simulatePayment);
-
-// Protéger les autres routes avec l'authentification
+// Appliquer le middleware d'authentification à toutes les routes
 router.use(authMiddleware);
 
-// Créer un nouveau paiement
+/**
+ * @route POST /api/paiements
+ * @desc Créer un nouveau paiement
+ * @access Privé
+ */
 router.post("/", creerPaiement);
 
-// Lister les paiements de l'utilisateur connecté
-router.get("/", listerPaiementsUtilisateur);
-
-// Route spécifique pour le frontend - mes paiements
-router.get("/mes-paiements", listerPaiementsUtilisateur);
-
-// Télécharger le reçu d'un paiement
-router.get("/:id/recu", telechargerRecuPaiement);
-
-// Obtenir le statut d'un paiement par référence
-router.get("/:reference", getStatutPaiement);
+/**
+ * @route GET /api/paiements/:id/recu
+ * @desc Télécharger le reçu de paiement en format TXT
+ * @access Privé
+ */
+router.get("/:id/recu", telechargerRecuPaiementTxt);
 
 export default router;

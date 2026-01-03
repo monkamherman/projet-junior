@@ -145,6 +145,8 @@ export const genererMonAttestation = async (req: Request, res: Response) => {
     }
 
     const { formationId } = req.body;
+    console.log("Génération attestation - Formation ID:", formationId);
+    console.log("Génération attestation - User ID:", req.user.id);
 
     // Vérifier l'éligibilité
     const inscription = await prisma.inscription.findFirst({
@@ -161,23 +163,37 @@ export const genererMonAttestation = async (req: Request, res: Response) => {
       },
     });
 
+    console.log("Inscription trouvée:", !!inscription);
+    if (inscription) {
+      console.log("Statut inscription:", inscription.statut);
+      console.log("Paiement:", !!inscription.paiement);
+      if (inscription.paiement) {
+        console.log("Statut paiement:", inscription.paiement.statut);
+      }
+      console.log("Attestation existante:", !!inscription.attestation);
+    }
+
     if (!inscription) {
+      console.log("Inscription non trouvée");
       return res.status(404).json({
         message: "Inscription non trouvée ou non validée",
       });
     }
 
     // Vérifications
-    if (!inscription.paiement || inscription.paiement.statut !== "VALIDE") {
+    // Pour les utilisateurs déjà inscrits, on peut être plus flexible sur le paiement
+    if (inscription.paiement && inscription.paiement.statut !== "VALIDE") {
+      console.log("Paiement non valide - statut:", inscription.paiement.statut);
       return res.status(400).json({
         message: "Le paiement doit être validé pour générer une attestation",
       });
     }
 
     if (inscription.attestation) {
-      return res.status(400).json({
-        message: "Une attestation existe déjà pour cette formation",
-      });
+      console.log(
+        "Attestation existe déjà - retour de l'attestation existante"
+      );
+      return res.json(inscription.attestation);
     }
 
     // Vérifier si la formation est terminée
@@ -185,6 +201,7 @@ export const genererMonAttestation = async (req: Request, res: Response) => {
     const dateFinFormation = new Date(inscription.formation.dateFin);
 
     if (maintenant < dateFinFormation) {
+      console.log("Formation non terminée - date fin:", dateFinFormation);
       return res.status(400).json({
         message: "La formation n'est pas encore terminée",
       });
@@ -283,6 +300,8 @@ export const telechargerMonAttestation = async (
     }
 
     const { id } = req.params;
+    console.log("Téléchargement attestation - ID:", id);
+    console.log("Téléchargement attestation - User ID:", req.user.id);
 
     const attestation = await prisma.attestation.findUnique({
       where: { id },
@@ -296,7 +315,14 @@ export const telechargerMonAttestation = async (
       },
     });
 
+    console.log("Attestation trouvée:", !!attestation);
+    if (attestation) {
+      console.log("Propriétaire ID:", attestation.inscription.utilisateurId);
+      console.log("URL PDF:", attestation.urlPdf);
+    }
+
     if (!attestation) {
+      console.log("Attestation non trouvée en base");
       return res.status(404).json({ message: "Attestation non trouvée" });
     }
 

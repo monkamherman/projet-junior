@@ -1,3 +1,4 @@
+import { axiosInstance } from '@/api/api.config';
 import {
   paiementService,
   type PaiementRecord,
@@ -146,13 +147,53 @@ export function useAttestationFlow(formationId: string) {
           error.response?.status === 400 &&
           error.response?.data?.alreadyEnrolled
         ) {
-          setError(
-            new Error(
-              'Vous êtes déjà inscrit à cette formation. Vous pouvez télécharger votre attestation depuis votre espace.'
-            )
+          console.log(
+            "Utilisateur déjà inscrit, tentative de générer l'attestation directement..."
           );
-          // Ne pas rediriger - laisser l'utilisateur voir les options disponibles
-          throw error;
+
+          // Tenter de générer l'attestation directement pour l'inscription existante
+          try {
+            // Appeler directement l'endpoint de génération d'attestation
+            const response = await axiosInstance.post<Attestation>(
+              '/api/attestations/generer',
+              {
+                formationId: paymentDetails.formationId,
+              }
+            );
+
+            const generatedAttestation = response.data;
+            console.log(
+              'Attestation générée (déjà inscrit):',
+              generatedAttestation
+            );
+
+            if (generatedAttestation) {
+              setAttestation(generatedAttestation);
+              console.log(
+                'Attestation stockée dans état:',
+                generatedAttestation.id
+              );
+            }
+
+            setStatus('success');
+            setIsDialogOpen(false);
+
+            return {
+              paiement: null,
+              attestation: generatedAttestation,
+            };
+          } catch (attestationError) {
+            console.error(
+              "Erreur lors de la génération directe de l'attestation:",
+              attestationError
+            );
+            setError(
+              new Error(
+                "Vous êtes déjà inscrit mais la génération de l'attestation a échoué. Veuillez contacter le support."
+              )
+            );
+            throw error;
+          }
         }
 
         setError(

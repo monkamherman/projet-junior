@@ -83,9 +83,14 @@ export function AttestationButton({
   };
 
   const handleDownloadAttestation = async () => {
-    if (!attestation) return;
+    console.log('Téléchargement attestation - attestation:', attestation);
+    if (!attestation) {
+      console.log("Pas d'attestation disponible");
+      return;
+    }
 
     try {
+      console.log('Téléchargement avec ID:', attestation.id);
       await downloadAttestation(attestation.id);
     } catch (error) {
       const message =

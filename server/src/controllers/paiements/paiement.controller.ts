@@ -364,3 +364,111 @@ export const telechargerRecuPaiement = async (req: Request, res: Response) => {
     });
   }
 };
+
+/**
+ * Télécharger le reçu de paiement en format TXT
+ */
+export const telechargerRecuPaiementTxt = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Non autorisé" });
+    }
+
+    const { id } = req.params;
+
+    const paiement = await prisma.paiement.findUnique({
+      where: { id },
+      include: {
+        inscriptions: {
+          include: {
+            formation: true,
+          },
+        },
+      },
+    });
+
+    if (!paiement) {
+      return res.status(404).json({ message: "Paiement non trouvé" });
+    }
+
+    // Vérifier que l'utilisateur est bien le propriétaire
+    if (paiement.utilisateurId !== req.user.id) {
+      return res
+        .status(403)
+        .json({ message: "Non autorisé à accéder à ce paiement" });
+    }
+
+    // Générer le contenu du reçu en format TXT
+    const recuContent = `
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                              REÇU DE PAIEMENT                               ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+Date d'émission : ${new Date().toLocaleDateString("fr-FR")}
+Référence       : ${paiement.reference}
+Statut          : ${paiement.statut}
+
+────────────────────────────────────────────────────────────────────────────────
+DÉTAILS DU PAIEMENT
+────────────────────────────────────────────────────────────────────────────────
+
+Montant payé    : ${paiement.montant.toLocaleString("fr-FR")} FCFA
+Méthode         : ${paiement.mode}
+Téléphone       : ${paiement.telephone}
+Date du paiement: ${paiement.datePaiement.toLocaleDateString("fr-FR")}
+
+────────────────────────────────────────────────────────────────────────────────
+FORMATION
+────────────────────────────────────────────────────────────────────────────────
+
+${paiement.inscriptions?.[0]?.formation?.titre || "Formation inconnue"}
+
+────────────────────────────────────────────────────────────────────────────────
+INFORMATIONS SUR L'ÉTUDIANT
+────────────────────────────────────────────────────────────────────────────────
+
+Nom complet     : ${req.user.prenom} ${req.user.nom}
+Email          : ${req.user.email}
+Téléphone      : ${req.user.telephone || "Non spécifié"}
+
+────────────────────────────────────────────────────────────────────────────────
+INFORMATIONS DE L'ORGANISME
+────────────────────────────────────────────────────────────────────────────────
+
+Nom            : CENTIC
+Email          : contact@centic.com
+Téléphone      : +225 00 00 00 00
+Site web       : www.centic.com
+
+────────────────────────────────────────────────────────────────────────────────
+Mentions importantes
+────────────────────────────────────────────────────────────────────────────────
+
+• Ce reçu constitue la preuve de votre paiement
+• Conservez-le précieusement pour toute réclamation
+• Pour toute question, contactez notre service client
+• Ce document a été généré électroniquement et est valide sans signature
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                              MERCI POUR VOTRE CONFIANCE                      ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+`.trim();
+
+    // Définir les headers pour le téléchargement
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="recu-paiement-${paiement.reference}.txt"`
+    );
+
+    res.send(recuContent);
+  } catch (error) {
+    console.error("Erreur lors du téléchargement du reçu:", error);
+    res.status(500).json({
+      message: "Erreur lors du téléchargement du reçu",
+    });
+  }
+};

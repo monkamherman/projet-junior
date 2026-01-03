@@ -49,8 +49,9 @@ export class AttestationService {
     // 2. Si le paiement réussit, générer l'attestation
     try {
       const response = await axiosInstance.post<Attestation>(
-        `${API_BASE_URL}/generer/${details.formationId}`,
+        `${API_BASE_URL}/generer`,
         {
+          formationId: details.formationId,
           paymentMethod: details.methode,
           phoneNumber: details.numeroTelephone,
           amount: details.montant,
