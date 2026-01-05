@@ -1,70 +1,186 @@
-# Projet Junior - Backend (Centre de Formation)
+# Projet Junior - Centre de Formation
 
-API Node.js/Express + Prisma (MongoDB) pour la gestion d’un centre de formation.
+Application complète de gestion de centre de formation avec React frontend et Node.js backend.
+
+## Architecture
+
+- **Frontend** : React + TypeScript + TailwindCSS (port 3001)
+- **Backend** : Node.js + Express + Prisma + MongoDB (port 10000)
 
 ## Prérequis
+
 - Node.js >= 20
-- Yarn 1.x
-- MongoDB (Atlas ou local) et une URL `DATABASE_URL`
-- (Optionnel) Redis pour le rate limiting
+- Bun (gestionnaire de paquets)
+- MongoDB (Atlas ou local)
+- Navigateur moderne
 
 ## Installation
+
+### Backend
+
 ```bash
 cd server
 cp .env.example .env   # créez-le si absent
 # éditez .env et définissez : DATABASE_URL, JWT_SECRET, ALLOWED_ORIGINS
 
-yarn
-npx prisma generate
-npx prisma db push
+bun install
+bunx prisma generate
+bunx prisma db push
 ```
 
-### Lancement en dev
+### Frontend
+
+```bash
+cd client
+bun install
+```
+
+## Commandes de lancement
+
+### Démarrage complet (recommandé)
+
+```bash
+# Terminal 1 - Backend
+cd server
+bun dev
+
+# Terminal 2 - Frontend
+cd client
+bun dev
+```
+
+### Backend uniquement
+
 ```bash
 cd server
-JWT_SECRET=change-me ALLOWED_ORIGINS=http://localhost:5173 PORT=10000 yarn dev
+bun dev
+# Serveur disponible sur http://localhost:10000
 ```
 
-## Modèles principaux (Prisma)
-- Participant: identité + champs d’auth (email, password, role)
-- Formation, Formateur
-- Dispense (session)
-- Inscription (pivot Participant ↔ Formation)
-- Parlement (paiement)
-- Interdiction, Fonction, Concerne
+### Frontend uniquement
+
+```bash
+cd client
+bun dev
+# Application disponible sur http://localhost:3001
+```
+
+### Variables d'environnement requises
+
+```bash
+# Backend (.env)
+DATABASE_URL=mongodb+srv://...
+JWT_SECRET=votre-secret-ici
+ALLOWED_ORIGINS=http://localhost:3001
+PORT=10000
+```
+
+## Fonctionnalités principales
+
+### 🎓 Formations
+
+- Consultation des formations disponibles
+- Inscription aux formations
+- Suivi de progression
+
+### 💳 Paiements
+
+- Paiement en ligne (Orange Money, MTN Money)
+- Génération de reçus (format TXT)
+- Historique des paiements
+
+### 📜 Attestations
+
+- Génération automatique d'attestations
+- Téléchargement en PDF
+- Design professionnel camerounais
+
+### 👤 Profil utilisateur
+
+- Gestion des informations personnelles
+- Historique des formations
+- Téléchargement des documents
+
+## Modèles de données (Prisma)
+
+- **Utilisateur** : identité + authentification
+- **Formation** : programmes de formation
+- **Inscription** : inscription utilisateur ↔ formation
+- **Paiement** : transactions financières
+- **Attestation** : certificats de réussite
 
 ## Authentification
-- Endpoints:
-  - POST `/api/auth/signup` { email, password, nom, prenom, sexe, dateNaissance, lieuNaissance, telephone }
-  - POST `/api/auth/login` { email, password }
-  - GET `/api/auth/me` (Bearer Token)
-  - POST `/api/auth/logout`
-- JWT: mettre `JWT_SECRET` dans `.env`
 
-## Middleware
-- `requireAuth`: protège les routes en vérifiant le token JWT
+- JWT avec refresh token
+- Rôles : ADMIN, FORMATEUR, APPRENANT
+- Protection des routes par middleware
 
-## Endpoints V0 (CRUD minimal)
-- Participants: `/api/participants` (POST, GET, GET/:id)
-- Formations: `/api/formations` (POST, GET, GET/:id)
-- Formateurs: `/api/formateurs` (POST, GET, GET/:id)
-- Dispenses: `/api/dispenses` (POST, GET, GET/:id)
-- Inscriptions: `/api/inscriptions` (POST, GET, GET/:id)
-- Parlements: `/api/parlements` (POST, GET, GET/:id)
+## Endpoints principaux
 
-Toutes ces routes sont protégées par `requireAuth` (utiliser un token obtenu via login/signup).
+### Authentification
+
+- `POST /api/auth/signup` - Inscription
+- `POST /api/auth/login` - Connexion
+- `GET /api/auth/me` - Profil utilisateur
+- `POST /api/auth/logout` - Déconnexion
+
+### Formations
+
+- `GET /api/formations/public` - Formations publiques
+- `GET /api/formations` - Formations (auth)
+
+### Paiements
+
+- `POST /api/paiements` - Créer paiement
+- `GET /api/paiements/:id/recu` - Télécharger reçu
+
+### Attestations
+
+- `POST /api/attestations/generer` - Générer attestation
+- `GET /api/attestations/:id/telecharger` - Télécharger PDF
 
 ## Sécurité
-- Helmet, CORS, rate limiting (Redis optionnel en dev)
 
-## Scripts
-- `yarn dev`: dev server (ts-node-dev)
-- `yarn build`: build TypeScript
-- `yarn start`: run build
+- Helmet, CORS, rate limiting
+- Validation des entrées (Zod)
+- Hashage des mots de passe
+- Protection CSRF
 
-## Prochaines étapes
-- Rôles avancés (admin/formateur)
-- Validation de schémas (zod/yup)
-- Pagination/filtrage avancé
-- Génération PDF (attestations/factures)
-- Upload fichiers (S3/local)
+## Développement
+
+### Scripts backend
+
+```bash
+bun dev      # Serveur de développement
+bun build    # Build TypeScript
+bun start    # Production
+```
+
+### Scripts frontend
+
+```bash
+bun dev      # Serveur de développement
+bun build    # Build pour production
+bun preview  # Prévisualiser le build
+```
+
+## Déploiement
+
+```bash
+# Build production
+cd client && bun build
+cd server && bun build
+
+# Lancement production
+cd server && bun start
+```
+
+## Technologies
+
+- **Frontend** : React 18, TypeScript, TailwindCSS, React Hook Form, Zod
+- **Backend** : Node.js, Express, Prisma, MongoDB, JWT, PDFKit
+- **Outils** : Bun, Vite, ESLint, Prettier
+
+## Support
+
+Pour toute question ou problème, contactez l'équipe de développement.

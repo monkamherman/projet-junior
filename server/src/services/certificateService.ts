@@ -205,7 +205,7 @@ export function generateCertificate(
         .text("_________________________", { align: "right" })
         .moveDown(0.5)
         .fontSize(12)
-        .text("Dr. Herman Monkam", { align: "right" })
+        .text("FALANG MOUYEBE Emmanuel", { align: "right" })
         .font("Helvetica-Oblique")
         .text("Directeur Académique", { align: "right" });
 
