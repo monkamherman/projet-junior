@@ -23,8 +23,9 @@ WORKDIR /app
 # Copier les fichiers de dépendances
 COPY package.json bun.lock ./
 
-# Installer uniquement les dépendances de production
-RUN bun install --production
+# Installer les dépendances de production + prisma
+RUN bun install --production && \
+    bun add prisma
 
 # Copier les fichiers construits
 COPY --from=builder /app/dist ./dist
@@ -33,7 +34,7 @@ COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 
 # Générer le client Prisma
-RUN ./node_modules/.bin/prisma generate
+RUN bunx prisma generate
 
 # Exposer le port
 EXPOSE 3000
