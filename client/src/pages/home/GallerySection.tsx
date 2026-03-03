@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Images, ZoomIn } from 'lucide-react';
 import React, { useState } from 'react';
+import { Carousel } from '../../components/ui/carousel';
 
 // Configuration des images de la galerie
 const galleryImages = [
@@ -31,6 +32,55 @@ const GallerySection: React.FC = () => {
     'Tous',
     ...Array.from(new Set(galleryImages.map((img) => img.category))),
   ];
+
+  const galleryItems = filteredImages.map((image) => (
+    <Dialog key={image.id}>
+      <DialogTrigger asChild>
+        <Card className="group cursor-pointer overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-xl">
+          <CardContent className="relative p-0">
+            <div className="aspect-square overflow-hidden bg-muted">
+              <img
+                src={image.src}
+                alt={image.alt}
+                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                loading="lazy"
+              />
+            </div>
+
+            {/* Overlay avec informations */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+              <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium">{image.alt}</span>
+                  <ZoomIn className="h-4 w-4" />
+                </div>
+                <Badge variant="secondary" className="mt-2 text-xs">
+                  {image.category}
+                </Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </DialogTrigger>
+
+      {/* Dialog pour l'affichage en plein écran */}
+      <DialogContent className="w-full max-w-4xl bg-background/95 p-0 backdrop-blur-sm">
+        <div className="relative">
+          <img
+            src={image.src}
+            alt={image.alt}
+            className="h-auto max-h-[80vh] w-full object-contain"
+          />
+          <div className="absolute bottom-4 left-4 right-4 rounded-lg bg-black/80 p-3 backdrop-blur-sm">
+            <div className="flex items-center justify-between text-white">
+              <span className="font-medium">{image.alt}</span>
+              <Badge variant="secondary">{image.category}</Badge>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  ));
 
   return (
     <section className="bg-gradient-to-b from-background to-muted/20 px-4 py-16">
@@ -63,59 +113,8 @@ const GallerySection: React.FC = () => {
           ))}
         </div>
 
-        {/* Grille de la galerie */}
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3">
-          {filteredImages.map((image) => (
-            <Dialog key={image.id}>
-              <DialogTrigger asChild>
-                <Card className="group cursor-pointer overflow-hidden transition-all duration-300 hover:scale-105 hover:shadow-xl">
-                  <CardContent className="relative p-0">
-                    <div className="aspect-square overflow-hidden bg-muted">
-                      <img
-                        src={image.src}
-                        alt={image.alt}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        loading="lazy"
-                      />
-                    </div>
-
-                    {/* Overlay avec informations */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-                      <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">
-                            {image.alt}
-                          </span>
-                          <ZoomIn className="h-4 w-4" />
-                        </div>
-                        <Badge variant="secondary" className="mt-2 text-xs">
-                          {image.category}
-                        </Badge>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </DialogTrigger>
-
-              {/* Dialog pour l'affichage en plein écran */}
-              <DialogContent className="w-full max-w-4xl bg-background/95 p-0 backdrop-blur-sm">
-                <div className="relative">
-                  <img
-                    src={image.src}
-                    alt={image.alt}
-                    className="h-auto max-h-[80vh] w-full object-contain"
-                  />
-                  <div className="absolute bottom-4 left-4 right-4 rounded-lg bg-black/80 p-3 backdrop-blur-sm">
-                    <div className="flex items-center justify-between text-white">
-                      <span className="font-medium">{image.alt}</span>
-                      <Badge variant="secondary">{image.category}</Badge>
-                    </div>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
-          ))}
-        </div>
+        {/* Carrousel de la galerie */}
+        <Carousel items={galleryItems} itemsPerSlide={3} />
 
         {/* Message si aucune image */}
         {filteredImages.length === 0 && (

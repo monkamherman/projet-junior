@@ -1,42 +1,39 @@
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/UserAvatar';
 import { useAuth } from '@/contexts/AuthContext';
+import { Briefcase, Home, User } from 'lucide-react';
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { NavBar } from '../../components/ui/tubelight-navbar';
 
 const Header: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
 
+  const navItems = [
+    { name: 'Accueil', url: '/', icon: Home },
+    { name: 'À propos', url: '/a-propos', icon: User },
+    { name: 'Formations', url: '/formations', icon: Briefcase },
+  ];
+
   if (isLoading) {
     return (
-      <header className="sticky top-0 z-50 flex flex-col bg-gray-950/80 backdrop-blur-md">
+      <header className="flex flex-col bg-gray-950/80 backdrop-blur-md">
         <div className="flex items-center justify-between px-8 py-4">
           <img src="/logo.jpg" className="h-12 w-16 rounded" alt="Logo" />
           <div className="h-10 w-10 animate-pulse rounded-full bg-gray-700"></div>
         </div>
+        <NavBar items={navItems} />
       </header>
     );
   }
 
   return (
-    <header className="sticky top-0 z-50 flex flex-col bg-gray-800/50 backdrop-blur-md">
+    <header className="flex flex-col bg-gray-800/50 backdrop-blur-md">
       <div className="flex items-center justify-between px-8 py-4">
         <Link to="/" className="flex items-center">
           <img src="/logo.jpg" className="h-12 w-16 rounded" alt="Logo" />
         </Link>
-
-        <nav className="hidden gap-6 font-semibold text-white md:flex">
-          <Link to="/" className="transition hover:text-blue-400">
-            Accueil
-          </Link>
-          <Link to="/a-propos" className="transition hover:text-blue-400">
-            À propos
-          </Link>
-          <Link to="/formations" className="transition hover:text-blue-400">
-            Formations
-          </Link>
-        </nav>
 
         <div className="flex items-center gap-4">
           {isAuthenticated ? (
@@ -52,18 +49,7 @@ const Header: React.FC = () => {
         </div>
       </div>
 
-      {/* Navbar secondaire visible uniquement sur petits écrans */}
-      <nav className="flex justify-around border-t border-gray-500 bg-gray-700/80 px-4 py-2 md:hidden">
-        <Link to="/" className="transition hover:text-blue-400">
-          Accueil
-        </Link>
-        <Link to="/a-propos" className="transition hover:text-blue-400">
-          À propos
-        </Link>
-        <Link to="/formations" className="transition hover:text-blue-400">
-          Formations
-        </Link>
-      </nav>
+      <NavBar items={navItems} />
     </header>
   );
 };

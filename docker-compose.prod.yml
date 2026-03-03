@@ -24,12 +24,13 @@ services:
   # Reverse Proxy Nginx - Point d'entrée principal
   nginx:
     <<: *defaults
-    container_name: projet-junior-nginx
-    image: nginx:stable-alpine
+    container_name: centic-nginx
+    image: ghcr.io/monkamherman/projet-junior-nginx:${IMAGE_TAG:-latest}
     ports:
       - "80:80"
       - "443:443"
     volumes:
+      # Configuration nginx montée pour faciliter les modifications
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       # Pour SSL (à configurer plus tard)
       # - ./nginx/ssl:/etc/nginx/ssl:ro
@@ -46,13 +47,8 @@ services:
   # Service client (Frontend React)
   client:
     <<: *defaults
-    container_name: projet-junior-client
-    build:
-      context: ./client
-      dockerfile: Dockerfile
-      args:
-        - NODE_ENV=production
-        - VITE_API_URL=/api
+    container_name: centic-client
+    image: ghcr.io/monkamherman/projet-junior-client:${IMAGE_TAG:-latest}
     expose:
       - "80"
     depends_on:
@@ -68,12 +64,8 @@ services:
   # Service serveur (Backend Express)
   server:
     <<: *defaults
-    container_name: projet-junior-server
-    build:
-      context: ./server
-      dockerfile: Dockerfile
-      args:
-        - NODE_ENV=production
+    container_name: centic-server
+    image: ghcr.io/monkamherman/projet-junior-server:${IMAGE_TAG:-latest}
     expose:
       - "3000"
     depends_on:
@@ -94,7 +86,7 @@ services:
   mongodb:
     <<: *defaults
     image: mongo:6.0
-    container_name: projet-junior-mongodb
+    container_name: centic-mongodb
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME:-admin}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD:-change_this_password}

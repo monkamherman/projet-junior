@@ -4,28 +4,28 @@ Application complète de gestion de centre de formation avec React frontend et N
 
 ## Architecture
 
-- **Frontend** : React + TypeScript + TailwindCSS (port 3001)
-- **Backend** : Node.js + Express + Prisma + MongoDB (port 10000)
+- **Frontend** : React + TypeScript + TailwindCSS
+- **Backend** : Node.js + Express + Prisma + MongoDB
+- **Reverse Proxy** : Nginx
 
 ## Prérequis
 
 - Node.js >= 20
 - Bun (gestionnaire de paquets)
 - MongoDB (Atlas ou local)
-- Navigateur moderne
+- Docker & Docker Compose (pour la production)
 
-## Installation
+## Installation en local
 
 ### Backend
 
 ```bash
 cd server
-cp .env.example .env   # créez-le si absent
-# éditez .env et définissez : DATABASE_URL, JWT_SECRET, ALLOWED_ORIGINS
-
+cp .env.example .env
 bun install
 bunx prisma generate
 bunx prisma db push
+bun dev
 ```
 
 ### Frontend
@@ -33,87 +33,105 @@ bunx prisma db push
 ```bash
 cd client
 bun install
-```
-
-## Commandes de lancement
-
-### Démarrage complet (recommandé)
-
-```bash
-# Terminal 1 - Backend
-cd server
-bun dev
-
-# Terminal 2 - Frontend
-cd client
 bun dev
 ```
 
-### Backend uniquement
+## Déploiement Docker (Production)
 
-```bash
-cd server
-bun dev
-# Serveur disponible sur http://localhost:10000
+### Architecture de production
+
+```
+centic.rageai.digital:80
+        │
+        ▼
+    ┌─────────────┐
+    │   Nginx     │  (Reverse Proxy)
+    └─────┬───────┘
+          │
+    ┌─────┴───────┐
+    │             │
+    ▼             ▼
+┌────────┐   ┌────────┐
+│ Client │   │ Server │
+└────────┘   └───┬────┘
+                 │
+                 ▼
+           ┌──────────┐
+           │ MongoDB  │
+           └──────────┘
 ```
 
-### Frontend uniquement
+### 1. Configuration GitHub Actions
+
+Les images Docker sont automatiquement construites et publiées sur GHCR via GitHub Actions.
+
+**Fichier concerné** : `.github/workflows/docker-build.yml`
+
+### 2. Sur le VPS
 
 ```bash
-cd client
-bun dev
-# Application disponible sur http://localhost:3001
+# Créer le répertoire de déploiement
+mkdir -p /opt/centic && cd /opt/centic
+
+# Télécharger les fichiers de configuration
+# Option 1: Cloner le repo (recommandé pour la première fois)
+git clone https://github.com/monkamherman/projet-junior.git .
+
+# Option 2: Créer les fichiers manuellement
+# - docker-compose.prod.yml
+# - nginx/nginx.conf
+# - .env
+# - deploy.sh
+
+# Créer le fichier .env
+cat > .env << EOF
+MONGO_INITDB_ROOT_USERNAME=admin
+MONGO_INITDB_ROOT_PASSWORD=votre_mot_de_passe_securise
+MONGO_INITDB_DATABASE=projet_junior
+JWT_SECRET=votre_jwt_secret_securise
+CLIENT_URL=https://centic.rageai.digital
+VITE_API_URL=/api
+EOF
+
+# Rendre le script exécutable
+chmod +x deploy.sh
+
+# Déployer
+./deploy.sh latest
 ```
 
-### Variables d'environnement requises
+### 3. Déployer une nouvelle version
 
 ```bash
-# Backend (.env)
-DATABASE_URL=mongodb+srv://...
-JWT_SECRET=votre-secret-ici
-ALLOWED_ORIGINS=http://localhost:3001
-PORT=10000
+# Sur le VPS
+cd /opt/centic
+./deploy.sh latest        # dernière version
+./deploy.sh v1.2.0        # version spécifique
 ```
 
-## Fonctionnalités principales
+### 4. Commandes utiles
 
-### 🎓 Formations
+```bash
+# Voir l'état des conteneurs
+docker-compose -f docker-compose.prod.yml ps
 
-- Consultation des formations disponibles
-- Inscription aux formations
-- Suivi de progression
+# Voir les logs
+docker-compose -f docker-compose.prod.yml logs -f
 
-### 💳 Paiements
+# Arrêter les services
+docker-compose -f docker-compose.prod.yml down
 
-- Paiement en ligne (Orange Money, MTN Money)
-- Génération de reçus (format TXT)
-- Historique des paiements
+# Redémarrer
+docker-compose -f docker-compose.prod.yml restart
+```
 
-### 📜 Attestations
+## Images Docker
 
-- Génération automatique d'attestations
-- Téléchargement en PDF
-- Design professionnel camerounais
+Les images sont publiées sur GitHub Container Registry :
 
-### 👤 Profil utilisateur
-
-- Gestion des informations personnelles
-- Historique des formations
-- Téléchargement des documents
-
-## Modèles de données (Prisma)
-
-- **Utilisateur** : identité + authentification
-- **Formation** : programmes de formation
-- **Inscription** : inscription utilisateur ↔ formation
-- **Paiement** : transactions financières
-- **Attestation** : certificats de réussite
-
-## Authentification
-
-- JWT avec refresh token
-- Rôles : ADMIN, FORMATEUR, APPRENANT
-- Protection des routes par middleware
+- `ghcr.io/monkamherman/projet-junior-client:latest`
+- `ghcr.io/monkamherman/projet-junior-server:latest`
+- `ghcr.io/monkamherman/projet-junior-nginx:latest`
 
 ## Endpoints principaux
 
@@ -122,7 +140,6 @@ PORT=10000
 - `POST /api/auth/signup` - Inscription
 - `POST /api/auth/login` - Connexion
 - `GET /api/auth/me` - Profil utilisateur
-- `POST /api/auth/logout` - Déconnexion
 
 ### Formations
 
@@ -139,47 +156,11 @@ PORT=10000
 - `POST /api/attestations/generer` - Générer attestation
 - `GET /api/attestations/:id/telecharger` - Télécharger PDF
 
-## Sécurité
-
-- Helmet, CORS, rate limiting
-- Validation des entrées (Zod)
-- Hashage des mots de passe
-- Protection CSRF
-
-## Développement
-
-### Scripts backend
-
-```bash
-bun dev      # Serveur de développement
-bun build    # Build TypeScript
-bun start    # Production
-```
-
-### Scripts frontend
-
-```bash
-bun dev      # Serveur de développement
-bun build    # Build pour production
-bun preview  # Prévisualiser le build
-```
-
-## Déploiement
-
-```bash
-# Build production
-cd client && bun build
-cd server && bun build
-
-# Lancement production
-cd server && bun start
-```
-
 ## Technologies
 
 - **Frontend** : React 18, TypeScript, TailwindCSS, React Hook Form, Zod
 - **Backend** : Node.js, Express, Prisma, MongoDB, JWT, PDFKit
-- **Outils** : Bun, Vite, ESLint, Prettier
+- **Outils** : Bun, Vite, Docker, GitHub Actions
 
 ## Support
 

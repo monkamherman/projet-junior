@@ -1,9 +1,18 @@
-import { PrismaClient } from "@prisma/client";
+import { Formation, Paiement, PrismaClient, Utilisateur } from "@prisma/client";
 import { Request, Response } from "express";
 import { z } from "zod";
+import monetbilService, {
+  MonetbilWebhookData,
+} from "../../services/monetbil.service";
 import { generatePaymentReceiptPdf } from "../../services/paymentReceipt.service";
 
 const prisma = new PrismaClient();
+
+// Type pour le paiement avec relations
+type PaiementAvecRelations = Paiement & {
+  formation: Formation;
+  utilisateur: Utilisateur;
+};
 
 // Schéma de validation pour la création d'un paiement
 const createPaiementSchema = z.object({
@@ -17,7 +26,8 @@ const createPaiementSchema = z.object({
 });
 
 /**
- * Crée un nouveau paiement
+ * Crée un nouveau paiement avec intégration Monetbil
+ * Flow complet: Création -> Appel Monetbil -> Retour URL de paiement
  */
 export const creerPaiement = async (req: Request, res: Response) => {
   try {
@@ -27,17 +37,16 @@ export const creerPaiement = async (req: Request, res: Response) => {
     }
 
     // Valider les données de la requête
-    console.log("Données reçues:", req.body);
+    console.log("[Paiement] Données reçues:", req.body);
     const validation = createPaiementSchema.safeParse(req.body);
-    console.log("Résultat validation:", validation.success);
+
     if (!validation.success) {
-      console.log("Erreurs de validation:", validation.error.issues);
+      console.log("[Paiement] Erreurs de validation:", validation.error.issues);
       return res.status(400).json({
         message: "Données invalides",
         errors: validation.error.issues,
       });
     }
-    console.log("Validation réussie, données:", validation.data);
 
     const {
       formationId,
@@ -49,39 +58,28 @@ export const creerPaiement = async (req: Request, res: Response) => {
       commentaire,
     } = validation.data;
     const utilisateurId = req.user.id;
-    console.log("Utilisateur ID:", utilisateurId);
 
     // Vérifier si l'utilisateur et la formation existent
-    console.log("Vérification utilisateur et formation...");
+    console.log("[Paiement] Vérification utilisateur et formation...");
     const [utilisateur, formation] = await Promise.all([
       prisma.utilisateur.findUnique({ where: { id: utilisateurId } }),
       prisma.formation.findUnique({ where: { id: formationId } }),
     ]);
-    console.log("Utilisateur trouvé:", !!utilisateur);
-    console.log("Formation trouvée:", !!formation);
 
     if (!utilisateur) {
-      console.log("Utilisateur non trouvé");
       return res.status(404).json({ message: "Utilisateur non trouvé" });
     }
 
     if (!formation) {
-      console.log("Formation non trouvée");
       return res.status(404).json({ message: "Formation non trouvée" });
     }
 
     // Vérifier si l'utilisateur est déjà inscrit à cette formation
-    console.log("Vérification inscription existante...");
     const inscriptionExistante = await prisma.inscription.findFirst({
-      where: {
-        utilisateurId,
-        formationId,
-      },
+      where: { utilisateurId, formationId },
     });
-    console.log("Inscription existante:", !!inscriptionExistante);
 
     if (inscriptionExistante) {
-      console.log("Déjà inscrit à cette formation");
       return res.status(400).json({
         message:
           "Vous êtes déjà inscrit à cette formation. Vous pouvez accéder directement à votre attestation depuis votre espace.",
@@ -92,7 +90,7 @@ export const creerPaiement = async (req: Request, res: Response) => {
     // Créer une référence unique pour le paiement
     const reference = `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
-    // Créer le paiement
+    // Créer le paiement en base avec statut EN_ATTENTE
     const paiement = await prisma.paiement.create({
       data: {
         reference,
@@ -108,98 +106,80 @@ export const creerPaiement = async (req: Request, res: Response) => {
       },
     });
 
-    // Dans un environnement réel, ici vous feriez l'appel à l'API de paiement
-    // Pour ce prototype, nous allons simuler un paiement réussi après 3 secondes
-    setTimeout(async () => {
-      try {
-        await prisma.paiement.update({
-          where: { id: paiement.id },
-          data: {
-            statut: "VALIDE",
-            datePaiement: new Date(),
-          },
-        });
+    console.log("[Paiement] Paiement créé en base:", paiement.id);
 
-        // Créer automatiquement une inscription si le paiement est validé
-        const inscription = await prisma.inscription.create({
-          data: {
-            dateInscription: new Date(),
-            statut: "VALIDEE",
-            utilisateur: { connect: { id: utilisateurId } },
-            formation: { connect: { id: formationId } },
-            paiement: { connect: { id: paiement.id } },
-          },
-        });
+    // Vérifier si Monetbil est configuré
+    if (!monetbilService.isConfigured()) {
+      console.warn(
+        "[Paiement] Monetbil non configuré - mode simulation activé",
+      );
 
-        // Vérifier si la formation est terminée pour générer automatiquement l'attestation
-        const formation = await prisma.formation.findUnique({
-          where: { id: formationId },
-        });
+      // Mode simulation si Monetbil n'est pas configuré
+      return res.status(201).json({
+        message: "Paiement créé (mode simulation - Monetbil non configuré)",
+        reference: paiement.reference,
+        statut: paiement.statut,
+        paiementId: paiement.id,
+        simulation: true,
+        note: "Configurez MONETBIL_API_KEY, MONETBIL_SERVICE_ID et MONETBIL_SERVICE_SECRET pour activer les paiements réels",
+      });
+    }
 
-        if (formation) {
-          const maintenant = new Date();
-          const dateFinFormation = new Date(formation.dateFin);
+    // Appeler l'API Monetbil pour créer le paiement
+    console.log("[Paiement] Appel à l'API Monetbil...");
+    const monetbilResponse = await monetbilService.createPayment(
+      montant,
+      telephone,
+      reference,
+      operateur,
+      `Paiement formation: ${formation.titre}`,
+    );
 
-          // Si la formation est déjà terminée, générer l'attestation automatiquement
-          if (maintenant >= dateFinFormation) {
-            try {
-              const { generateCertificate } = await import(
-                "../../services/certificateService"
-              );
+    if (!monetbilResponse.success) {
+      // Mettre à jour le statut du paiement en cas d'échec
+      await prisma.paiement.update({
+        where: { id: paiement.id },
+        data: {
+          statut: "ECHEC",
+          monetbilStatus: "failed",
+          commentaire:
+            monetbilResponse.error || "Erreur lors de l'appel Monetbil",
+        },
+      });
 
-              // Récupérer l'inscription complète avec les relations
-              const inscriptionComplete = await prisma.inscription.findUnique({
-                where: { id: inscription.id },
-                include: {
-                  utilisateur: true,
-                  formation: true,
-                },
-              });
+      return res.status(400).json({
+        message: "Erreur lors de l'initialisation du paiement",
+        error: monetbilResponse.error,
+        reference: paiement.reference,
+      });
+    }
 
-              if (inscriptionComplete) {
-                const certificateData =
-                  await generateCertificate(inscriptionComplete);
+    // Mettre à jour le paiement avec les infos Monetbil
+    await prisma.paiement.update({
+      where: { id: paiement.id },
+      data: {
+        statut: "EN_COURS",
+        monetbilTransactionId: monetbilResponse.transaction_id,
+        monetbilPaymentUrl: monetbilResponse.payment_url,
+        monetbilStatus: "pending",
+      },
+    });
 
-                // Créer l'attestation
-                await prisma.attestation.create({
-                  data: {
-                    numero: `ATT-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-                    urlPdf: certificateData.url,
-                    statut: "GENEREE",
-                    dateEmission: new Date(),
-                    utilisateur: { connect: { id: utilisateurId } },
-                    formation: { connect: { id: formationId } },
-                    inscription: { connect: { id: inscription.id } },
-                  },
-                });
-
-                console.log(
-                  `Attestation générée automatiquement pour l'utilisateur ${utilisateurId}`
-                );
-              }
-            } catch (error) {
-              console.error(
-                "Erreur lors de la génération automatique de l'attestation:",
-                error
-              );
-            }
-          }
-        }
-      } catch (error) {
-        console.error(
-          "Erreur lors de la mise à jour du statut du paiement:",
-          error
-        );
-      }
-    }, 3000);
+    console.log("[Paiement] Paiement Monetbil créé avec succès:", {
+      transactionId: monetbilResponse.transaction_id,
+      paymentUrl: monetbilResponse.payment_url,
+    });
 
     res.status(201).json({
       message: "Paiement initié avec succès",
       reference: paiement.reference,
-      statut: paiement.statut,
+      statut: "EN_COURS",
+      paiementId: paiement.id,
+      paymentUrl: monetbilResponse.payment_url,
+      transactionId: monetbilResponse.transaction_id,
     });
   } catch (error) {
-    console.error("Erreur lors de la création du paiement:", error);
+    console.error("[Paiement] Erreur lors de la création:", error);
     const errorMessage =
       error instanceof Error ? error.message : "Erreur inconnue";
     res.status(500).json({
@@ -253,7 +233,7 @@ export const getStatutPaiement = async (req: Request, res: Response) => {
   } catch (error) {
     console.error(
       "Erreur lors de la récupération du statut du paiement:",
-      error
+      error,
     );
     const errorMessage =
       error instanceof Error ? error.message : "Erreur inconnue";
@@ -269,7 +249,7 @@ export const getStatutPaiement = async (req: Request, res: Response) => {
  */
 export const listerPaiementsUtilisateur = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     if (!req.user) {
@@ -351,7 +331,7 @@ export const telechargerRecuPaiement = async (req: Request, res: Response) => {
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="recu-${paiement.reference}.pdf"`
+      `attachment; filename="recu-${paiement.reference}.pdf"`,
     );
     return res.send(pdfBuffer);
   } catch (error) {
@@ -370,7 +350,7 @@ export const telechargerRecuPaiement = async (req: Request, res: Response) => {
  */
 export const telechargerRecuPaiementTxt = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   try {
     if (!req.user) {
@@ -461,7 +441,7 @@ Mentions importantes
     res.setHeader("Content-Type", "text/plain; charset=utf-8");
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="recu-paiement-${paiement.reference}.txt"`
+      `attachment; filename="recu-paiement-${paiement.reference}.txt"`,
     );
 
     res.send(recuContent);
@@ -469,6 +449,374 @@ Mentions importantes
     console.error("Erreur lors du téléchargement du reçu:", error);
     res.status(500).json({
       message: "Erreur lors du téléchargement du reçu",
+    });
+  }
+};
+
+/**
+ * Webhook Monetbil - Callback pour les notifications de paiement
+ * Cette fonction est appelée par Monetbil après un paiement (succès ou échec)
+ * Route publique (pas d'authentification requise - vérification par signature)
+ */
+export const monetbilWebhook = async (req: Request, res: Response) => {
+  console.log("[Webhook Monetbil] Réception d'un callback:", req.body);
+
+  try {
+    const webhookData: MonetbilWebhookData = req.body;
+
+    // Vérifier les données requises
+    if (!webhookData.transaction_id || !webhookData.reference) {
+      console.error("[Webhook Monetbil] Données manquantes:", webhookData);
+      return res.status(400).json({ message: "Données de webhook invalides" });
+    }
+
+    // Vérifier la signature si présente (sécurité)
+    if (webhookData.signature) {
+      const isValid = monetbilService.verifyWebhookSignature(
+        webhookData,
+        webhookData.signature,
+      );
+      if (!isValid) {
+        console.error("[Webhook Monetbil] Signature invalide");
+        return res.status(401).json({ message: "Signature invalide" });
+      }
+    }
+
+    // Trouver le paiement par référence
+    const paiement = await prisma.paiement.findUnique({
+      where: { reference: webhookData.reference },
+      include: {
+        formation: true,
+        utilisateur: true,
+      },
+    });
+
+    if (!paiement) {
+      console.error(
+        "[Webhook Monetbil] Paiement non trouvé:",
+        webhookData.reference,
+      );
+      return res.status(404).json({ message: "Paiement non trouvé" });
+    }
+
+    console.log("[Webhook Monetbil] Statut reçu:", webhookData.status);
+
+    // Mapper le statut Monetbil vers notre statut interne
+    const statusMap: Record<
+      string,
+      "VALIDE" | "ECHEC" | "ANNULE" | "EN_COURS"
+    > = {
+      success: "VALIDE",
+      completed: "VALIDE",
+      failed: "ECHEC",
+      cancelled: "ANNULE",
+      pending: "EN_COURS",
+    };
+
+    const nouveauStatut =
+      statusMap[webhookData.status.toLowerCase()] || "EN_COURS";
+
+    // Mettre à jour le paiement
+    await prisma.paiement.update({
+      where: { id: paiement.id },
+      data: {
+        statut: nouveauStatut,
+        monetbilStatus: webhookData.status,
+        monetbilTransactionId: webhookData.transaction_id,
+        monetbilPhone: webhookData.phone,
+        monetbilOperator: webhookData.operator,
+        datePaiement:
+          nouveauStatut === "VALIDE" ? new Date() : paiement.datePaiement,
+      },
+    });
+
+    console.log("[Webhook Monetbil] Paiement mis à jour:", nouveauStatut);
+
+    // Si le paiement est validé, créer l'inscription et potentiellement l'attestation
+    if (nouveauStatut === "VALIDE") {
+      await traiterPaiementValide(paiement);
+    }
+
+    // Répondre à Monetbil pour confirmer la réception
+    res.status(200).json({
+      message: "Webhook traité avec succès",
+      reference: paiement.reference,
+      statut: nouveauStatut,
+    });
+  } catch (error) {
+    console.error("[Webhook Monetbil] Erreur:", error);
+    res.status(500).json({
+      message: "Erreur lors du traitement du webhook",
+      error: error instanceof Error ? error.message : "Erreur inconnue",
+    });
+  }
+};
+
+/**
+ * Traite un paiement validé: crée l'inscription et l'attestation si nécessaire
+ */
+async function traiterPaiementValide(paiement: PaiementAvecRelations) {
+  try {
+    console.log("[Paiement] Traitement du paiement validé:", paiement.id);
+
+    // Vérifier si une inscription existe déjà
+    const inscriptionExistante = await prisma.inscription.findFirst({
+      where: {
+        utilisateurId: paiement.utilisateurId,
+        formationId: paiement.formationId,
+      },
+    });
+
+    if (inscriptionExistante) {
+      console.log(
+        "[Paiement] Inscription existante trouvée - mise à jour du statut",
+      );
+      await prisma.inscription.update({
+        where: { id: inscriptionExistante.id },
+        data: {
+          statut: "VALIDEE",
+          paiementId: paiement.id,
+        },
+      });
+      return;
+    }
+
+    // Créer l'inscription
+    const inscription = await prisma.inscription.create({
+      data: {
+        dateInscription: new Date(),
+        statut: "VALIDEE",
+        utilisateur: { connect: { id: paiement.utilisateurId } },
+        formation: { connect: { id: paiement.formationId } },
+        paiement: { connect: { id: paiement.id } },
+      },
+    });
+
+    console.log("[Paiement] Inscription créée:", inscription.id);
+
+    // Vérifier si la formation est terminée pour générer l'attestation
+    const maintenant = new Date();
+    const dateFinFormation = new Date(paiement.formation.dateFin);
+
+    if (maintenant >= dateFinFormation) {
+      console.log(
+        "[Paiement] Formation terminée - génération de l'attestation",
+      );
+      await genererAttestation(paiement, inscription);
+    }
+  } catch (error) {
+    console.error(
+      "[Paiement] Erreur lors du traitement du paiement validé:",
+      error,
+    );
+    throw error;
+  }
+}
+
+/**
+ * Génère une attestation pour un paiement validé
+ */
+async function genererAttestation(
+  paiement: PaiementAvecRelations,
+  inscription: { id: string },
+) {
+  try {
+    const { generateCertificate } = await import(
+      "../../services/certificateService"
+    );
+
+    // Récupérer l'inscription complète avec les relations
+    const inscriptionComplete = await prisma.inscription.findUnique({
+      where: { id: inscription.id },
+      include: {
+        utilisateur: true,
+        formation: true,
+      },
+    });
+
+    if (!inscriptionComplete) {
+      console.error("[Paiement] Inscription non trouvée pour l'attestation");
+      return;
+    }
+
+    const certificateData = await generateCertificate(inscriptionComplete);
+
+    // Créer l'attestation
+    await prisma.attestation.create({
+      data: {
+        numero: `ATT-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        urlPdf: certificateData.url,
+        statut: "GENEREE",
+        dateEmission: new Date(),
+        utilisateur: { connect: { id: paiement.utilisateurId } },
+        formation: { connect: { id: paiement.formationId } },
+        inscription: { connect: { id: inscription.id } },
+      },
+    });
+
+    console.log("[Paiement] Attestation générée avec succès");
+  } catch (error) {
+    console.error(
+      "[Paiement] Erreur lors de la génération de l'attestation:",
+      error,
+    );
+  }
+}
+
+/**
+ * Vérifie manuellement le statut d'un paiement Monetbil
+ * Utile pour les cas où le webhook n'a pas été reçu
+ */
+export const verifierStatutMonetbil = async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Non autorisé" });
+    }
+
+    const { reference } = req.params;
+
+    const paiement = await prisma.paiement.findUnique({
+      where: { reference },
+    });
+
+    if (!paiement) {
+      return res.status(404).json({ message: "Paiement non trouvé" });
+    }
+
+    // Vérifier l'autorisation
+    if (req.user.role !== "ADMIN" && paiement.utilisateurId !== req.user.id) {
+      return res.status(403).json({ message: "Non autorisé" });
+    }
+
+    // Si pas de transaction Monetbil, retourner le statut actuel
+    if (!paiement.monetbilTransactionId) {
+      return res.json({
+        message: "Paiement sans transaction Monetbil",
+        statut: paiement.statut,
+        reference: paiement.reference,
+      });
+    }
+
+    // Vérifier le statut auprès de Monetbil
+    console.log(
+      "[Paiement] Vérification statut Monetbil:",
+      paiement.monetbilTransactionId,
+    );
+    const statusMonetbil = await monetbilService.checkTransactionStatus(
+      paiement.monetbilTransactionId,
+    );
+
+    if (!statusMonetbil) {
+      return res.json({
+        message: "Impossible de récupérer le statut Monetbil",
+        statut: paiement.statut,
+        reference: paiement.reference,
+      });
+    }
+
+    // Mettre à jour le statut si différent
+    const statusMap: Record<
+      string,
+      "VALIDE" | "ECHEC" | "ANNULE" | "EN_COURS"
+    > = {
+      success: "VALIDE",
+      completed: "VALIDE",
+      failed: "ECHEC",
+      cancelled: "ANNULE",
+      pending: "EN_COURS",
+    };
+
+    const nouveauStatut = statusMap[statusMonetbil.status] || paiement.statut;
+
+    if (nouveauStatut !== paiement.statut) {
+      await prisma.paiement.update({
+        where: { id: paiement.id },
+        data: {
+          statut: nouveauStatut,
+          monetbilStatus: statusMonetbil.status,
+          monetbilPhone: statusMonetbil.phone,
+          monetbilOperator: statusMonetbil.operator,
+        },
+      });
+
+      // Si validé, traiter
+      if (nouveauStatut === "VALIDE") {
+        const paiementComplet = await prisma.paiement.findUnique({
+          where: { id: paiement.id },
+          include: { formation: true, utilisateur: true },
+        });
+        if (paiementComplet) {
+          await traiterPaiementValide(paiementComplet);
+        }
+      }
+    }
+
+    res.json({
+      message: "Statut vérifié",
+      reference: paiement.reference,
+      statut: nouveauStatut,
+      statutMonetbil: statusMonetbil.status,
+      transactionId: paiement.monetbilTransactionId,
+    });
+  } catch (error) {
+    console.error("[Paiement] Erreur vérification statut:", error);
+    res.status(500).json({
+      message: "Erreur lors de la vérification du statut",
+      error: error instanceof Error ? error.message : "Erreur inconnue",
+    });
+  }
+};
+
+/**
+ * Annule un paiement en cours
+ */
+export const annulerPaiement = async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Non autorisé" });
+    }
+
+    const { reference } = req.params;
+
+    const paiement = await prisma.paiement.findUnique({
+      where: { reference },
+    });
+
+    if (!paiement) {
+      return res.status(404).json({ message: "Paiement non trouvé" });
+    }
+
+    // Vérifier l'autorisation
+    if (paiement.utilisateurId !== req.user.id && req.user.role !== "ADMIN") {
+      return res.status(403).json({ message: "Non autorisé" });
+    }
+
+    // Vérifier si le paiement peut être annulé
+    if (paiement.statut === "VALIDE") {
+      return res.status(400).json({
+        message: "Ce paiement est déjà validé et ne peut pas être annulé",
+      });
+    }
+
+    // Mettre à jour le statut
+    await prisma.paiement.update({
+      where: { id: paiement.id },
+      data: {
+        statut: "ANNULE",
+        monetbilStatus: "cancelled",
+      },
+    });
+
+    res.json({
+      message: "Paiement annulé avec succès",
+      reference: paiement.reference,
+      statut: "ANNULE",
+    });
+  } catch (error) {
+    console.error("[Paiement] Erreur annulation:", error);
+    res.status(500).json({
+      message: "Erreur lors de l'annulation du paiement",
+      error: error instanceof Error ? error.message : "Erreur inconnue",
     });
   }
 };

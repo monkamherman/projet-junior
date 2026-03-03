@@ -117,6 +117,13 @@ model Paiement {
   code         String? // Code de transaction
   commentaire  String? // Commentaire supplémentaire
 
+  // Champs Monetbil
+  monetbilTransactionId String? // ID de transaction Monetbil
+  monetbilPaymentUrl    String? // URL de paiement Monetbil
+  monetbilStatus        String? // Statut retourné par Monetbil
+  monetbilPhone         String? // Numéro utilisé pour le paiement
+  monetbilOperator      String? // Opérateur retourné par Monetbil
+
   // Relations
   utilisateur   Utilisateur   @relation(fields: [utilisateurId], references: [id])
   utilisateurId String        @db.ObjectId
