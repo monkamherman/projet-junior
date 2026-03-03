@@ -18,7 +18,7 @@ const morganStream = {
 
 export const app = express();
 
-// Configuration CORS simplifiée pour le développement
+// Configuration CORS pour développement et production
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
     const allowedOrigins = [
@@ -29,6 +29,7 @@ const corsOptions: cors.CorsOptions = {
       "http://localhost:3001",
       "http://localhost:3002",
       "https://projet-junior-client.onrender.com",
+      "https://centic.rageai.digital", // Domaine de production
     ];
     if (!origin || allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
@@ -59,7 +60,7 @@ app.use(
     crossOriginResourcePolicy: { policy: "cross-origin" },
     crossOriginEmbedderPolicy: false,
     crossOriginOpenerPolicy: false,
-  })
+  }),
 );
 
 // Rate limiting simple en mémoire (remplace Redis)
@@ -75,7 +76,7 @@ setInterval(
       }
     }
   },
-  5 * 60 * 1000
+  5 * 60 * 1000,
 );
 
 // Rate limiting simplifié
@@ -143,14 +144,14 @@ app.use(
     err: Error,
     req: express.Request,
     res: express.Response,
-    next: express.NextFunction
+    next: express.NextFunction,
   ) => {
     if (err.message.includes("CORS")) {
       res.status(403).json({ error: err.message });
     } else {
       next(err);
     }
-  }
+  },
 );
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 10000;
