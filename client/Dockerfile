@@ -14,7 +14,7 @@ ENV VITE_API_URL=${VITE_API_URL}
 COPY package.json bun.lock ./
 
 # Installer les dépendances
-RUN bun install --frozen-lockfile
+RUN bun install
 
 # Copier le reste des fichiers
 COPY . .
