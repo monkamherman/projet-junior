@@ -13,8 +13,11 @@ ENV VITE_API_URL=${VITE_API_URL}
 # Copier les fichiers de configuration
 COPY package.json bun.lock ./
 
+# Installer npm (Alpine Linux)
+RUN apk add --no-cache nodejs npm
+
 # Installer les dépendances
-RUN bun install
+RUN npm install
 
 # Copier le reste des fichiers
 COPY . .

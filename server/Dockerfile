@@ -6,8 +6,11 @@ WORKDIR /app
 # Copier les fichiers de dépendances
 COPY package.json bun.lock ./
 
+# Installer npm (Alpine Linux)
+RUN apk add --no-cache nodejs npm
+
 # Installer les dépendances
-RUN bun install
+RUN npm install
 
 # Copier le reste des fichiers
 COPY . .
@@ -24,8 +27,8 @@ WORKDIR /app
 COPY package.json bun.lock ./
 
 # Installer les dépendances de production + prisma
-RUN bun install --production && \
-    bun add prisma@6
+RUN npm install --only=production && \
+    npm install prisma@6
 
 # Copier les fichiers construits
 COPY --from=builder /app/dist ./dist
