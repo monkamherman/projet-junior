@@ -25,7 +25,7 @@ COPY package.json bun.lock ./
 
 # Installer les dépendances de production + prisma
 RUN bun install --production && \
-    bun add prisma
+    bun add prisma@6
 
 # Copier les fichiers construits
 COPY --from=builder /app/dist ./dist
