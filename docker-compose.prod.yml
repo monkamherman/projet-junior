@@ -72,12 +72,11 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
+    env_file:
+      - .env
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - MONGODB_URI=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:27017/${MONGO_INITDB_DATABASE}?authSource=admin
-      - JWT_SECRET=${JWT_SECRET:-your_jwt_secret_key_here}
-      - CLIENT_URL=https://centic.rageai.digital
     volumes:
       - certificates_data:/app/public/certificates
       - attestations_data:/app/public/attestations
