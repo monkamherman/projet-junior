@@ -1,50 +1,57 @@
 # Étape de construction
-FROM oven/bun:latest AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copier les fichiers de dépendances
-COPY package.json bun.lock ./
+# Installer les outils système + ca-certificates pour HTTPS fiable
+RUN apk add --no-cache openssl ca-certificates
 
-# Installer npm (Alpine Linux)
-RUN apk add --no-cache nodejs npm
+# Optimisations npm pour réseaux instables
+RUN npm config set fetch-retries 5 && \
+    npm config set fetch-timeout 60000 && \
+    npm config set fetch-retry-mintimeout 20000 && \
+    npm config set fetch-retry-maxtimeout 120000
 
-# Installer les dépendances
-RUN npm install
+# Optionnel : utiliser un registry mirror plus stable
+# RUN npm config set registry https://registry.npmmirror.com
 
-# Copier le reste des fichiers
+COPY package.json package-lock.json* ./
+
+# Installer avec retries et ignore-scripts si problèmes de build natif
+RUN npm install --legacy-peer-deps --prefer-offline --no-audit
+
 COPY . .
+COPY prisma ./prisma
 
-# Construire l'application
-RUN rm -rf ./dist && bunx tsc --noCheck
+# Générer Prisma AVANT la compilation
+RUN npx prisma generate
+
+# Compiler TypeScript (sans --noEmit)
+RUN rm -rf ./dist && npx tsc
 
 # Étape de production
-FROM oven/bun:latest
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Copier les fichiers de dépendances
-COPY package.json bun.lock ./
+# Optimisations npm runtime
+RUN npm config set fetch-retries 5 && \
+    npm config set fetch-timeout 60000
 
-# Installer les dépendances de production + prisma
-RUN npm install --only=production && \
-    npm install prisma@6
+COPY package.json package-lock.json* ./
 
-# Copier les fichiers construits
+# Installer uniquement les dépendances de production
+RUN npm install --omit=dev --legacy-peer-deps --prefer-offline --no-audit && \
+    npm install prisma@6 --legacy-peer-deps --prefer-offline --no-audit
+
 COPY --from=builder /app/dist ./dist
-
-# Copier les fichiers Prisma
 COPY --from=builder /app/prisma ./prisma
 
-# Générer le client Prisma
-RUN bunx prisma generate
+RUN npx prisma generate
 
-# Exposer le port
-EXPOSE 3000
-
-# Variables d'environnement
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Commande de démarrage
-CMD ["bun", "run", "start:prod"]
+EXPOSE 3000
+
+CMD ["npm", "run", "start:prod"]

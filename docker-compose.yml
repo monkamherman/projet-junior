@@ -1,5 +1,3 @@
-version: '3.8'
-
 # Configuration par défaut
 x-defaults: &defaults
   restart: unless-stopped
