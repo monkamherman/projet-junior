@@ -46,6 +46,7 @@ RUN npm install --omit=dev --legacy-peer-deps --prefer-offline --no-audit && \
 
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/.env.example ./.env.example
 
 RUN npx prisma generate
 
