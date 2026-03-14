@@ -21,7 +21,7 @@ const morganStream = {
     },
 };
 exports.app = (0, express_1.default)();
-// Configuration CORS simplifiée pour le développement
+// Configuration CORS pour développement et production
 const corsOptions = {
     origin: (origin, callback) => {
         const allowedOrigins = [
@@ -32,6 +32,7 @@ const corsOptions = {
             "http://localhost:3001",
             "http://localhost:3002",
             "https://projet-junior-client.onrender.com",
+            "https://centic.rageai.digital", // Domaine de production
         ];
         if (!origin || allowedOrigins.indexOf(origin) !== -1) {
             callback(null, true);

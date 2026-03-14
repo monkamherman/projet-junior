@@ -33,38 +33,41 @@ async function getProfile(req, res) {
         if (!user) {
             return res.status(404).json({ message: "Utilisateur non trouvé." });
         }
-        // Récupérer les formations de l'utilisateur
+        // Récupérer les formations de l'utilisateur (sans inclure la formation pour éviter les erreurs)
         const inscriptions = await prisma.inscription.findMany({
             where: {
                 utilisateurId: req.user.id,
                 statut: "VALIDEE",
             },
+        });
+        // Récupérer les formations séparément pour éviter les erreurs de null
+        const formationIds = inscriptions.map((i) => i.formationId).filter(Boolean);
+        const formationsData = await prisma.formation.findMany({
+            where: {
+                id: { in: formationIds },
+            },
             include: {
-                formation: {
-                    include: {
-                        formateur: {
-                            select: {
-                                id: true,
-                                nom: true,
-                                prenom: true,
-                            },
-                        },
+                formateur: {
+                    select: {
+                        id: true,
+                        nom: true,
+                        prenom: true,
                     },
                 },
             },
         });
-        // Transformer les inscriptions en formations
-        const formations = inscriptions.map((inscription) => ({
-            id: inscription.formation.id,
-            titre: inscription.formation.titre,
-            description: inscription.formation.description,
-            dateDebut: inscription.formation.dateDebut,
-            duree: Math.ceil((new Date(inscription.formation.dateFin).getTime() -
-                new Date(inscription.formation.dateDebut).getTime()) /
+        // Combiner les données
+        const formations = formationsData.map((formation) => ({
+            id: formation.id,
+            titre: formation.titre,
+            description: formation.description,
+            dateDebut: formation.dateDebut,
+            duree: Math.ceil((new Date(formation.dateFin).getTime() -
+                new Date(formation.dateDebut).getTime()) /
                 (1000 * 60 * 60 * 24)), // Durée en jours
-            statut: new Date() > new Date(inscription.formation.dateFin)
+            statut: new Date() > new Date(formation.dateFin)
                 ? "TERMINÉ"
-                : new Date() >= new Date(inscription.formation.dateDebut)
+                : new Date() >= new Date(formation.dateDebut)
                     ? "EN_COURS"
                     : "NON_COMMENCÉ",
         }));
@@ -81,6 +84,22 @@ async function getProfile(req, res) {
                 },
             },
         });
+        // Récupérer les paiements de l'utilisateur
+        const paiements = await prisma.paiement.findMany({
+            where: {
+                utilisateurId: req.user.id,
+            },
+            include: {
+                inscriptions: {
+                    include: {
+                        formation: true,
+                    },
+                },
+            },
+            orderBy: {
+                datePaiement: "desc",
+            },
+        });
         // Transformer les attestations
         const attestationsFormatted = attestations.map((attestation) => ({
             id: attestation.id,
@@ -88,11 +107,23 @@ async function getProfile(req, res) {
             formation: attestation.inscription.formation.titre,
             dateDelivrance: attestation.dateEmission,
         }));
+        // Transformer les paiements
+        const paiementsFormatted = paiements.map((paiement) => ({
+            id: paiement.id,
+            reference: paiement.reference,
+            montant: paiement.montant,
+            methode: paiement.mode,
+            statut: paiement.statut,
+            datePaiement: paiement.datePaiement,
+            formation: paiement.inscriptions?.[0]?.formation?.titre || "Formation inconnue",
+            telephone: paiement.telephone,
+        }));
         // Combiner les données
         const profileData = {
             ...user,
             formations,
             attestations: attestationsFormatted,
+            paiements: paiementsFormatted,
         };
         res.json(profileData);
     }

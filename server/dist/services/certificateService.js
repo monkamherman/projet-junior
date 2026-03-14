@@ -53,6 +53,15 @@ function generateCertificate(inscription) {
                 .fontSize(32)
                 .font("Helvetica-Bold")
                 .text("ATTESTATION DE FORMATION", { align: "center", underline: true })
+                .moveDown(0.5);
+            // Nom de la structure
+            doc
+                .fontSize(20)
+                .font("Helvetica-Bold")
+                .fill("#0284c7")
+                .text("CENTIC - CENTRE D'EXCELLENCE NUMÉRIQUE ET DE COMMUNICATION", {
+                align: "center",
+            })
                 .moveDown(1);
             // Sous-titre
             doc
@@ -66,7 +75,9 @@ function generateCertificate(inscription) {
                 .fontSize(16)
                 .font("Helvetica")
                 .fill("#334155")
-                .text("Le soussigné, Directeur des études,", { align: "right" })
+                .text("Le soussigné, Directeur des études du CENTIC,", {
+                align: "right",
+            })
                 .moveDown(1)
                 .text("Certifie par la présente que :", { align: "center" })
                 .moveDown(1);
@@ -135,17 +146,17 @@ function generateCertificate(inscription) {
                 .fontSize(14)
                 .font("Helvetica")
                 .fill("#334155")
-                .text(`Fait à Abidjan, le ${dateEmission}`, { align: "right" })
+                .text(`Fait à Douala, Cameroun, le ${dateEmission}`, { align: "right" })
                 .moveDown(2);
             // Zone de signature
             doc
                 .fontSize(14)
-                .text("Le Directeur des études", { align: "right" })
+                .text("Le Directeur des études du CENTIC", { align: "right" })
                 .moveDown(0.5)
                 .text("_________________________", { align: "right" })
                 .moveDown(0.5)
                 .fontSize(12)
-                .text("Dr. [Nom du Directeur]", { align: "right" })
+                .text("FALANG MOUYEBE Emmanuel", { align: "right" })
                 .font("Helvetica-Oblique")
                 .text("Directeur Académique", { align: "right" });
             // Ajouter un sceau/watermark
@@ -157,14 +168,17 @@ function generateCertificate(inscription) {
                 .font("Helvetica-Bold")
                 .fillOpacity(0.1)
                 .fill("#0284c7")
-                .text("CERTIFIÉ", { align: "center" });
+                .text("CENTIC - CERTIFIÉ", { align: "center" });
             doc.restore();
             // Pied de page
             doc.fontSize(10);
             doc.fill("#64748b");
             const footerY = doc.page.height - 40;
-            doc.text("Centre de Formation Professionnelle - Agréé par l'État", 50, footerY, { align: "center" });
-            doc.text("N° d'agrée: 1234567890 - www.centreformation.ci", 50, footerY + 15, { align: "center" });
+            doc.text("CENTIC - CENTRE D'EXCELLENCE NUMÉRIQUE ET DE COMMUNICATION", 50, footerY, { align: "center" });
+            doc.text("Agréé par l'État du Cameroun - N° d'agrée: 1234567890", 50, footerY + 15, { align: "center" });
+            doc.text("Douala, Cameroun - www.centic.cm", 50, footerY + 30, {
+                align: "center",
+            });
             // Numéro de l'attestation
             const numeroAttestation = `ATT-${Date.now()}-${Math.floor(Math.random() * 10000)}`;
             doc.text(`Numéro: ${numeroAttestation}`, doc.page.width - 50, footerY, {
