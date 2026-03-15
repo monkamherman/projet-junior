@@ -16,6 +16,8 @@ import { useForm } from 'react-hook-form';
 import { useSearchParams } from 'react-router-dom';
 import { z } from 'zod';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+
 // Schéma de validation avec Zod
 const paiementSchema = z.object({
   mode: z.enum(['ORANGE_MONEY', 'MTN_MONEY']),
@@ -62,7 +64,7 @@ export function PaiementForm({
     try {
       setIsLoading(true);
 
-      const response = await fetch('/api/paiements', {
+      const response = await fetch(`${API_BASE_URL}/api/paiements`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

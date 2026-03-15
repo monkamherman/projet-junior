@@ -50,7 +50,7 @@ services:
       dockerfile: Dockerfile
       args:
         - NODE_ENV=production
-        - VITE_API_URL=/api
+        - VITE_API_URL=https://api.rageai.digital
     expose:
       - "80"
     depends_on:

@@ -1,6 +1,8 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import type { UseQueryOptions } from '@tanstack/react-query';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+
 export type PaiementStatut = 'EN_ATTENTE' | 'EN_COURS' | 'VALIDE' | 'ANNULE' | 'ECHEC';
 
 // Types
@@ -24,7 +26,7 @@ export type PaiementResponse = {
 
 // Créer un nouveau paiement
 export const createPaiement = async (data: PaiementData): Promise<PaiementResponse> => {
-  const response = await fetch('/api/paiements', {
+  const response = await fetch(`${API_BASE_URL}/api/paiements`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -43,7 +45,7 @@ export const createPaiement = async (data: PaiementData): Promise<PaiementRespon
 
 // Obtenir le statut d'un paiement
 export const getPaiementStatus = async (reference: string): Promise<PaiementResponse> => {
-  const response = await fetch(`/api/paiements/${reference}`, {
+  const response = await fetch(`${API_BASE_URL}/api/paiements/${reference}`, {
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('token')}`
     }
@@ -59,7 +61,7 @@ export const getPaiementStatus = async (reference: string): Promise<PaiementResp
 
 // Lister les paiements de l'utilisateur
 export const getPaiementsUtilisateur = async (): Promise<PaiementResponse[]> => {
-  const response = await fetch('/api/paiements', {
+  const response = await fetch(`${API_BASE_URL}/api/paiements`, {
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('token')}`
     }
