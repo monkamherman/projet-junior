@@ -3,12 +3,12 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Arguments de build pour les variables d'environnement
-ARG VITE_API_URL=/api
+ARG VITE_API_URL
+ARG NODE_ENV
 
-# Variables d'environnement pour le build
+
 ENV VITE_API_URL=${VITE_API_URL}
-
+ENV NODE_ENV=${NODE_ENV}
 # Copier les fichiers de configuration
 COPY package.json package-lock.json* ./
 
