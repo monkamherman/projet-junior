@@ -162,6 +162,43 @@ Les images sont publiées sur GitHub Container Registry :
 - **Backend** : Node.js, Express, Prisma, MongoDB, JWT, PDFKit
 - **Outils** : Bun, Vite, Docker, GitHub Actions
 
+## Mise à jour de l'application
+
+### Mise à jour locale (Développement)
+
+Pour mettre à jour l'application en environnement de développement :
+
+```bash
+# Mettre à jour les dépendances
+cd client && bun install
+cd server && bun install
+
+# Reconstruire les applications
+cd client && bun run build
+cd server && bun run build
+
+# Redémarrer les serveurs de développement
+bun run dev  # dans chaque dossier
+```
+
+### Mise à jour en production (Docker)
+
+Pour mettre à jour l'application en production sur le VPS :
+
+```bash
+# Sur le VPS
+cd /opt/centic
+
+# Option 1: Mettre à jour avec le script de déploiement
+./deploy.sh latest        # dernière version
+./deploy.sh v1.2.0        # version spécifique
+
+# Option 2: Mettre à jour manuellement
+docker-compose -f docker-compose.prod.yml pull
+docker-compose -f docker-compose.prod.yml down
+docker-compose -f docker-compose.prod.yml up -d
+```
+
 ## Support
 
 Pour toute question ou problème, contactez l'équipe de développement.

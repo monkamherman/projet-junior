@@ -1,5 +1,7 @@
 // import SEO from '@/components/ui/SEO'
 import React from 'react';
+import AboutSection from './AboutSection';
+import GallerySection from './GallerySection';
 import Hero from './Hero';
 import ServicesSection from './ServicesSection';
 
@@ -17,6 +19,13 @@ const Home: React.FC = () => {
         open={true}
         onOpenChange={() => {}}
         onPaymentSubmit={async (data) => {
+          // Logique de traitement du paiement
+          console.log('Détails du paiement:', data);
+          // Ici, vous pourriez appeler une API pour traiter le paiement
+          // Par exemple :
+          // await processPayment(data);
+        }}
+      /> */}
 
       <AboutSection />
 
