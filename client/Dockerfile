@@ -6,14 +6,15 @@ WORKDIR /app
 ARG VITE_API_URL
 ARG NODE_ENV
 
-
-ENV VITE_API_URL=${VITE_API_URL}
-ENV NODE_ENV=${NODE_ENV}
 # Copier les fichiers de configuration
 COPY package.json package-lock.json* ./
 
-# Installer les dépendances
+# Installer les dépendances (y compris devDependencies pour le build)
 RUN npm install --legacy-peer-deps
+
+# Définir les variables d'environnement après l'installation
+ENV VITE_API_URL=${VITE_API_URL}
+ENV NODE_ENV=${NODE_ENV}
 
 # Copier le reste des fichiers
 COPY . .
