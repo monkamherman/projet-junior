@@ -10,7 +10,8 @@ ARG NODE_ENV
 COPY package.json package-lock.json* ./
 
 # Installer les dépendances (y compris devDependencies pour le build)
-RUN npm install --legacy-peer-deps
+# Forcer l'installation des devDependencies en définissant NODE_ENV=development
+RUN NODE_ENV=development npm install --legacy-peer-deps
 
 # Définir les variables d'environnement après l'installation
 ENV VITE_API_URL=${VITE_API_URL}
