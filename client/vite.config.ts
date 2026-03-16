@@ -23,6 +23,8 @@ export default defineConfig(({ mode }) => {
     'https://api.rageai.digital';
 
   console.log('🔧 Vite config - API URL:', apiUrl, '(mode:', mode + ')');
+  console.log('🔧 process.env.VITE_API_URL:', process.env.VITE_API_URL);
+  console.log('🔧 env.VITE_API_URL:', env.VITE_API_URL);
 
   return {
     plugins: [react(), tsconfigPaths()],

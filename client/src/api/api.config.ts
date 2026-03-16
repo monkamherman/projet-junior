@@ -3,7 +3,8 @@ import type { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import axios from 'axios';
 
 // Configuration de base
-const BASE_URL = import.meta.env.VITE_API_URL || '';
+// Si VITE_API_URL n'est pas défini, utiliser l'URL de production par défaut
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://api.rageai.digital';
 
 console.log(
   "Configuration de l'API - URL de base:",

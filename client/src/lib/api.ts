@@ -4,7 +4,8 @@ import axios from 'axios';
 type ApiResponse<T = unknown> = Promise<T>;
 
 // Configuration de l'URL de base
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:10000';
+// Si VITE_API_URL n'est pas défini, utiliser l'URL de production par défaut
+const API_URL = import.meta.env.VITE_API_URL || 'https://api.rageai.digital';
 
 export const api: AxiosInstance = axios.create({
   baseURL: API_URL,
