@@ -40,7 +40,7 @@ services:
     environment:
       - NODE_ENV=production
     networks:
-      - app-network
+      - nginx-proxy-manager
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:80"]
 
@@ -71,7 +71,7 @@ services:
       - attestations_data:/app/public/attestations
       - receipts_data:/app/public/receipts
     networks:
-      - app-network
+      - nginx-proxy-manager
     healthcheck:
       test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health"]
 
@@ -81,7 +81,15 @@ services:
     image: mongo:6.0
     container_name: projet-junior-mongodb
     healthcheck:
-      test: ["CMD", "mongosh", "mongodb://${MONGO_INITDB_ROOT_USERNAME:-admin}:${MONGO_INITDB_ROOT_PASSWORD:-change_this_password}@localhost:27017/?authSource=admin", "--eval", "db.adminCommand('ping')", "--quiet"]
+      test:
+        [
+          "CMD",
+          "mongosh",
+          "mongodb://${MONGO_INITDB_ROOT_USERNAME:-admin}:${MONGO_INITDB_ROOT_PASSWORD:-change_this_password}@localhost:27017/?authSource=admin",
+          "--eval",
+          "db.adminCommand('ping')",
+          "--quiet",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -95,4 +103,4 @@ services:
     expose:
       - "27017"
     networks:
-      - app-network
+      - anginx-proxy-manager
