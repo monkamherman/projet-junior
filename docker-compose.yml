@@ -78,6 +78,12 @@ services:
     <<: *defaults
     image: mongo:6.0
     container_name: projet-junior-mongodb
+    healthcheck:
+      test: ["CMD", "mongosh", "mongodb://${MONGO_INITDB_ROOT_USERNAME:-admin}:${MONGO_INITDB_ROOT_PASSWORD:-change_this_password}@localhost:27017/?authSource=admin", "--eval", "db.adminCommand('ping')", "--quiet"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME:-admin}
       - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD:-change_this_password}
@@ -88,5 +94,3 @@ services:
       - "27017"
     networks:
       - app-network
-    healthcheck:
-      test: ["CMD", "sh", "-c", "mongosh 'mongodb://$${MONGO_INITDB_ROOT_USERNAME:-admin}:$${MONGO_INITDB_ROOT_PASSWORD:-change_this_password}@localhost:27017/?authSource=admin' --eval 'db.adminCommand(\"ping\")' --quiet"]
