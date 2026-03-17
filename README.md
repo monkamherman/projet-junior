@@ -6,14 +6,13 @@ Application complète de gestion de centre de formation avec React frontend et N
 
 - **Frontend** : React + TypeScript + TailwindCSS
 - **Backend** : Node.js + Express + Prisma + MongoDB
-- **Reverse Proxy** : Nginx
+- **Proxy** : Nginx Proxy Manager (sur le VPS)
 
 ## Prérequis
 
 - Node.js >= 20
-- Bun (gestionnaire de paquets)
-- MongoDB (Atlas ou local)
-- Docker & Docker Compose (pour la production)
+- MongoDB (Atlas ou local pour le dev)
+- Docker & Docker Compose (pour le déploiement)
 
 ## Installation en local
 
@@ -22,183 +21,144 @@ Application complète de gestion de centre de formation avec React frontend et N
 ```bash
 cd server
 cp .env.example .env
-bun install
-bunx prisma generate
-bunx prisma db push
-bun dev
+npm install  # ou bun install
+npx prisma generate
+npx prisma db push
+npm run dev
 ```
 
 ### Frontend
 
 ```bash
 cd client
-bun install
-bun dev
+npm install  # ou bun install
+npm run dev
 ```
 
-## Déploiement Docker (Production)
+## Déploiement sur VPS (clone + Nginx Proxy Manager)
 
 ### Architecture de production
 
 ```
-centic.rageai.digital:80
-        │
-        ▼
-    ┌─────────────┐
-    │   Nginx     │  (Reverse Proxy)
-    └─────┬───────┘
-          │
-    ┌─────┴───────┐
-    │             │
-    ▼             ▼
-┌────────┐   ┌────────┐
-│ Client │   │ Server │
-└────────┘   └───┬────┘
-                 │
-                 ▼
-           ┌──────────┐
-           │ MongoDB  │
-           └──────────┘
+                    Nginx Proxy Manager (80/443)
+                              │
+        centic.rageai.digital │
+                              │
+         ┌────────────────────┼────────────────────┐
+         │                    │                    │
+         ▼                    ▼                    ▼
+    / (frontend)         /api/*              /socket.io
+    localhost:3001       localhost:3002      localhost:3002
+         │                    │                    │
+         ▼                    ▼                    ▼
+    ┌─────────┐          ┌─────────┐          ┌──────────┐
+    │ Client  │          │ Server  │──────────│ MongoDB  │
+    └─────────┘          └─────────┘          └──────────┘
 ```
 
-### 1. Configuration GitHub Actions
-
-Les images Docker sont automatiquement construites et publiées sur GHCR via GitHub Actions.
-
-**Fichier concerné** : `.github/workflows/docker-build.yml`
-
-### 2. Sur le VPS
+### 1. Sur le VPS : cloner et déployer
 
 ```bash
 # Créer le répertoire de déploiement
 mkdir -p /opt/centic && cd /opt/centic
 
-# Télécharger les fichiers de configuration
-# Option 1: Cloner le repo (recommandé pour la première fois)
-git clone https://github.com/monkamherman/projet-junior.git .
-
-# Option 2: Créer les fichiers manuellement
-# - docker-compose.prod.yml
-# - nginx/nginx.conf
-# - .env
-# - deploy.sh
+# Cloner le projet
+git clone https://github.com/votre-org/projet-junior.git .
 
 # Créer le fichier .env
-cat > .env << EOF
-MONGO_INITDB_ROOT_USERNAME=admin
-MONGO_INITDB_ROOT_PASSWORD=votre_mot_de_passe_securise
-MONGO_INITDB_DATABASE=projet_junior
-JWT_SECRET=votre_jwt_secret_securise
-CLIENT_URL=https://centic.rageai.digital
-VITE_API_URL=/api
-EOF
+cp .env.example .env
+nano .env   # Adapter les valeurs (MongoDB, JWT_SECRET, CLIENT_URL)
 
-# Rendre le script exécutable
+# Lancer le déploiement
 chmod +x deploy.sh
-
-# Déployer
-./deploy.sh latest
+./deploy.sh
 ```
 
-### 3. Déployer une nouvelle version
+### 2. Configuration Nginx Proxy Manager
+
+Dans l'interface NPM (généralement `http://vps-ip:81`), créer un **Proxy Host** :
+
+| Champ | Valeur |
+|-------|--------|
+| **Domain Names** | `centic.rageai.digital` (votre domaine) |
+| **Scheme** | `http` |
+| **Forward Hostname / IP** | `host.docker.internal` ou `172.17.0.1` (ou IP du host si NPM est sur le host) |
+| **Forward Port** | `3001` |
+| **Cache Assets** | Activé (optionnel) |
+
+**Custom Locations** à ajouter dans le même Proxy Host :
+
+| Location | Forward Hostname | Forward Port | Websockets |
+|----------|------------------|--------------|------------|
+| `/api` | `host.docker.internal` ou `172.17.0.1` | `3002` | ☐ |
+| `/socket.io` | `host.docker.internal` ou `172.17.0.1` | `3002` | ☑ |
+
+> **Note** : Si NPM tourne sur le host (pas dans Docker), utiliser `127.0.0.1` au lieu de `host.docker.internal`.
+
+Activer **SSL** (Let's Encrypt) dans l'onglet SSL du Proxy Host pour HTTPS.
+
+### 3. Mise à jour
 
 ```bash
-# Sur le VPS
 cd /opt/centic
-./deploy.sh latest        # dernière version
-./deploy.sh v1.2.0        # version spécifique
+git pull
+./deploy.sh
 ```
 
 ### 4. Commandes utiles
 
 ```bash
 # Voir l'état des conteneurs
-docker-compose -f docker-compose.prod.yml ps
+docker compose ps
 
 # Voir les logs
-docker-compose -f docker-compose.prod.yml logs -f
+docker compose logs -f
 
 # Arrêter les services
-docker-compose -f docker-compose.prod.yml down
+docker compose down
 
-# Redémarrer
-docker-compose -f docker-compose.prod.yml restart
+# Reconstruire après modification du code
+docker compose build --no-cache && docker compose up -d
 ```
 
-## Images Docker
+## Ports exposés
 
-Les images sont publiées sur GitHub Container Registry :
+| Service | Port | Usage |
+|---------|------|-------|
+| Client (frontend) | 3001 | NPM forward `/` |
+| Server (backend) | 3002 | NPM forward `/api`, `/socket.io` |
 
-- `ghcr.io/monkamherman/projet-junior-client:latest`
-- `ghcr.io/monkamherman/projet-junior-server:latest`
-- `ghcr.io/monkamherman/projet-junior-nginx:latest`
+## Variables d'environnement (.env)
+
+| Variable | Description |
+|----------|-------------|
+| `MONGO_INITDB_ROOT_USERNAME` | Utilisateur MongoDB |
+| `MONGO_INITDB_ROOT_PASSWORD` | Mot de passe MongoDB |
+| `MONGO_INITDB_DATABASE` | Nom de la base |
+| `JWT_SECRET` | Clé secrète JWT |
+| `CLIENT_URL` | URL du frontend (ex: https://centic.rageai.digital) |
 
 ## Endpoints principaux
 
 ### Authentification
-
 - `POST /api/auth/signup` - Inscription
 - `POST /api/auth/login` - Connexion
 - `GET /api/auth/me` - Profil utilisateur
 
 ### Formations
-
 - `GET /api/formations/public` - Formations publiques
 - `GET /api/formations` - Formations (auth)
 
 ### Paiements
-
 - `POST /api/paiements` - Créer paiement
 - `GET /api/paiements/:id/recu` - Télécharger reçu
 
 ### Attestations
-
 - `POST /api/attestations/generer` - Générer attestation
 - `GET /api/attestations/:id/telecharger` - Télécharger PDF
 
 ## Technologies
 
-- **Frontend** : React 18, TypeScript, TailwindCSS, React Hook Form, Zod
+- **Frontend** : React 19, TypeScript, TailwindCSS, React Hook Form, Zod
 - **Backend** : Node.js, Express, Prisma, MongoDB, JWT, PDFKit
-- **Outils** : Bun, Vite, Docker, GitHub Actions
-
-## Mise à jour de l'application
-
-### Mise à jour locale (Développement)
-
-Pour mettre à jour l'application en environnement de développement :
-
-```bash
-# Mettre à jour les dépendances
-cd client && bun install
-cd server && bun install
-
-# Reconstruire les applications
-cd client && bun run build
-cd server && bun run build
-
-# Redémarrer les serveurs de développement
-bun run dev  # dans chaque dossier
-```
-
-### Mise à jour en production (Docker)
-
-Pour mettre à jour l'application en production sur le VPS :
-
-```bash
-# Sur le VPS
-cd /opt/centic
-
-# Option 1: Mettre à jour avec le script de déploiement
-./deploy.sh latest        # dernière version
-./deploy.sh v1.2.0        # version spécifique
-
-# Option 2: Mettre à jour manuellement
-docker-compose -f docker-compose.prod.yml pull
-docker-compose -f docker-compose.prod.yml down
-docker-compose -f docker-compose.prod.yml up -d
-```
-
-## Support
-
-Pour toute question ou problème, contactez l'équipe de développement.
+- **Outils** : Vite, Docker, Nginx Proxy Manager

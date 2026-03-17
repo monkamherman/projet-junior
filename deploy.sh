@@ -1,67 +1,75 @@
 #!/bin/bash
 
 # ===========================================
-# Script de déploiement pour le VPS
-# Usage: ./deploy.sh [tag]
+# Script de déploiement - Clone + Docker Compose
+# Utilisé avec Nginx Proxy Manager sur le VPS
+# Usage: ./deploy.sh
 # ===========================================
 
 set -e
 
-# Configuration
-REGISTRY="ghcr.io"
-IMAGE_PREFIX="monkamherman/projet-junior"
-COMPOSE_FILE="docker-compose.prod.yml"
+COMPOSE_FILE="docker-compose.yml"
 ENV_FILE=".env"
-
-# Tag des images (défaut: latest)
-IMAGE_TAG="${1:-latest}"
+ENV_EXAMPLE=".env.example"
 
 echo "=========================================="
-echo "Déploiement de Centic - Tag: $IMAGE_TAG"
+echo "Déploiement Projet Junior"
 echo "=========================================="
 
 # Vérifier que Docker est installé
-if ! command -v docker &> /dev/null || ! command -v docker-compose &> /dev/null; then
-    echo "❌ Docker et Docker Compose doivent être installés"
+if ! command -v docker &> /dev/null; then
+    echo "❌ Docker doit être installé"
     exit 1
 fi
 
-# Vérifier que le fichier .env existe
+if ! docker compose version &> /dev/null 2>&1; then
+    if ! command -v docker-compose &> /dev/null; then
+        echo "❌ Docker Compose doit être installé"
+        exit 1
+    fi
+    COMPOSE_CMD="docker-compose"
+else
+    COMPOSE_CMD="docker compose"
+fi
+
+# Vérifier/créer le fichier .env
 if [ ! -f "$ENV_FILE" ]; then
-    echo "❌ Le fichier $ENV_FILE n'existe pas"
-    echo "Créez-le avec les variables suivantes:"
-    echo "  MONGO_INITDB_ROOT_USERNAME=..."
-    echo "  MONGO_INITDB_ROOT_PASSWORD=..."
-    echo "  MONGO_INITDB_DATABASE=..."
-    echo "  JWT_SECRET=..."
-    exit 1
+    if [ -f "$ENV_EXAMPLE" ]; then
+        echo "📋 Création du .env à partir de .env.example..."
+        cp "$ENV_EXAMPLE" "$ENV_FILE"
+        echo "⚠️  Configurez le fichier .env avant de redéployer"
+    else
+        echo "❌ Le fichier .env n'existe pas"
+        echo "Créez-le avec les variables suivantes:"
+        echo "  MONGO_INITDB_ROOT_USERNAME=..."
+        echo "  MONGO_INITDB_ROOT_PASSWORD=..."
+        echo "  MONGO_INITDB_DATABASE=..."
+        echo "  JWT_SECRET=..."
+        echo "  CLIENT_URL=https://votre-domaine.com"
+        exit 1
+    fi
 fi
 
-# Connexion à GHCR (si credentials disponibles)
-if [ -n "$GHCR_USERNAME" ] && [ -n "$GHCR_TOKEN" ]; then
-    echo "🔐 Connexion à GHCR..."
-    echo "$GHCR_TOKEN" | docker login $REGISTRY -u "$GHCR_USERNAME" --password-stdin
-fi
+# Construire et démarrer les conteneurs
+echo "🔨 Construction des images..."
+$COMPOSE_CMD build
 
-# Pull des nouvelles images
-echo "📥 Téléchargement des images..."
-export IMAGE_TAG
-docker-compose -f $COMPOSE_FILE pull
-
-# Arrêt des anciens conteneurs
 echo "🛑 Arrêt des anciens conteneurs..."
-docker-compose -f $COMPOSE_FILE down --remove-orphans
+$COMPOSE_CMD down --remove-orphans 2>/dev/null || true
 
-# Démarrage des nouveaux conteneurs
 echo "🚀 Démarrage des conteneurs..."
-docker-compose -f $COMPOSE_FILE up -d
+$COMPOSE_CMD up -d
 
-# Nettoyage des anciennes images
-echo "🧹 Nettoyage des anciennes images..."
-docker image prune -f
+# Attendre que les services soient prêts
+echo "⏳ Attente du démarrage des services..."
+sleep 10
 
 # Vérification de l'état
 echo ""
 echo "✅ Déploiement terminé!"
 echo ""
-docker-compose -f $COMPOSE_FILE ps
+echo "Services exposés (pour Nginx Proxy Manager):"
+echo "  - Frontend:  http://localhost:3001"
+echo "  - Backend:   http://localhost:3002"
+echo ""
+$COMPOSE_CMD ps

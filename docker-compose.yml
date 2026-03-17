@@ -17,31 +17,12 @@ networks:
 # Volumes pour la persistance des données
 volumes:
   mongodb_data:
+  certificates_data:
+  attestations_data:
+  receipts_data:
 
 services:
-  # Reverse Proxy Nginx - Point d'entrée principal
-  nginx:
-    <<: *defaults
-    container_name: projet-junior-nginx
-    image: nginx:stable-alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      # Pour SSL (à configurer plus tard)
-      # - ./nginx/ssl:/etc/nginx/ssl:ro
-    depends_on:
-      client:
-        condition: service_healthy
-      server:
-        condition: service_healthy
-    networks:
-      - app-network
-    healthcheck:
-      test: ["CMD", "nginx", "-t"]
-
-  # Service client (Frontend React)
+  # Service client (Frontend React) - NPM reverse proxy vers le port 3001
   client:
     <<: *defaults
     container_name: projet-junior-client
@@ -49,10 +30,10 @@ services:
       context: ./client
       dockerfile: Dockerfile
       args:
-        - NODE_ENV=production
-        - VITE_API_URL=https://api.rageai.digital
-    expose:
-      - "80"
+        NODE_ENV: production
+        VITE_API_URL: ""
+    ports:
+      - "3001:80"
     depends_on:
       server:
         condition: service_healthy
@@ -61,9 +42,9 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "wget", "--spider", "http://localhost:80"]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:80"]
 
-  # Service serveur (Backend Express)
+  # Service serveur (Backend Express) - NPM reverse proxy vers le port 3002
   server:
     <<: *defaults
     container_name: projet-junior-server
@@ -72,23 +53,27 @@ services:
       dockerfile: Dockerfile
       args:
         - NODE_ENV=production
-    expose:
-      - "3000"
+    ports:
+      - "3002:3000"
     depends_on:
       mongodb:
         condition: service_healthy
+    env_file:
+      - .env
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - MONGODB_URI=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:27017/${MONGO_INITDB_DATABASE}?authSource=admin
-      - JWT_SECRET=${JWT_SECRET:-your_jwt_secret_key_here}
-      - CLIENT_URL=https://centic.rageai.digital
+      - DATABASE_URL=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:27017/${MONGO_INITDB_DATABASE}?authSource=admin
+    volumes:
+      - certificates_data:/app/public/certificates
+      - attestations_data:/app/public/attestations
+      - receipts_data:/app/public/receipts
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "wget", "--spider", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health"]
 
-  # Base de données MongoDB
+  # Base de données MongoDB (interne uniquement)
   mongodb:
     <<: *defaults
     image: mongo:6.0
@@ -104,4 +89,4 @@ services:
     networks:
       - app-network
     healthcheck:
-      test: echo 'db.runCommand("ping").ok' | mongosh mongodb://${MONGO_INITDB_ROOT_USERNAME:-admin}:${MONGO_INITDB_ROOT_PASSWORD:-change_this_password}@localhost:27017/${MONGO_INITDB_DATABASE:-projet_junior}?authSource=admin --quiet
+      test: ["CMD", "sh", "-c", "mongosh 'mongodb://$${MONGO_INITDB_ROOT_USERNAME:-admin}:$${MONGO_INITDB_ROOT_PASSWORD:-change_this_password}@localhost:27017/?authSource=admin' --eval 'db.adminCommand(\"ping\")' --quiet"]

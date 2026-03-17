@@ -1,0 +1,49 @@
+# CI - Validation du code (lint, build)
+# Le déploiement se fait via clone + deploy.sh sur le VPS
+
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+
+jobs:
+  lint-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install client dependencies
+        run: cd client && npm ci --legacy-peer-deps
+
+      - name: Lint client
+        run: cd client && npm run lint --if-present
+
+      - name: Build client
+        run: cd client && npm run build
+        env:
+          VITE_API_URL: ''
+
+      - name: Install server dependencies
+        run: cd server && npm ci --legacy-peer-deps
+
+      - name: Lint server
+        run: cd server && npm run lint 2>/dev/null || true
+
+      - name: Build server
+        run: cd server && npx prisma generate && npm run build
+        env:
+          DATABASE_URL: "mongodb://localhost:27017/test"
