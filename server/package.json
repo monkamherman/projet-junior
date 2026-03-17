@@ -11,7 +11,7 @@
     "dev": "ts-node-dev --respawn --clear --transpile-only --ignore-watch node_modules ./src/app.ts",
     "build": "rimraf ./dist && tsc",
     "start": "node dist/app.js",
-    "start:prod": "NODE_ENV=production PORT=10000 node dist/index.js",
+    "start:prod": "NODE_ENV=production node dist/index.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate deploy",
     "prisma:seed": "ts-node prisma/seed.ts"

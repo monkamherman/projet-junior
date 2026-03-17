@@ -47,6 +47,8 @@ RUN npm install --omit=dev --legacy-peer-deps --prefer-offline --no-audit && \
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/.env.example ./.env.example
+# dotenv-safe requiert un fichier .env ; les valeurs réelles viennent de docker-compose
+COPY --from=builder /app/.env.example ./.env
 
 RUN npx prisma generate
 

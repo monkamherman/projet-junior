@@ -64,6 +64,8 @@ services:
       - NODE_ENV=production
       - PORT=3000
       - DATABASE_URL=mongodb://${MONGO_INITDB_ROOT_USERNAME}:${MONGO_INITDB_ROOT_PASSWORD}@mongodb:27017/${MONGO_INITDB_DATABASE}?authSource=admin
+      - MONGO_DB_NAME=${MONGO_INITDB_DATABASE:-projet_junior}
+      - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET:-change_this_refresh_secret}
     volumes:
       - certificates_data:/app/public/certificates
       - attestations_data:/app/public/attestations
